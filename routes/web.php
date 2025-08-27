@@ -24,6 +24,11 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return view('pages.dashboard');
     })->name('dashboard');
+
+    // Remplacer l'ancienne ligne qui appelait "pages.profile" par la bonne vue Jetstream:
+    Route::get('/user/profile', function () {
+        return view('profile.show'); // <- bonne vue: resources/views/profile/show.blade.php
+    })->name('profile.show');
 });
 
 Route::middleware(['web', 'auth'])->group(function () {

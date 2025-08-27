@@ -35,11 +35,11 @@
                 </div>
             </form>
         </div>
-        <div class="card-footer text-center pt-0 px-lg-2 px-1">
-            <p class="mb-4 text-sm mx-auto">
-                Pas encore de compte ?
-                <a href="{{ route('register') }}" class="text-primary text-gradient font-weight-bold">Créer un compte</a>
-            </p>
-        </div>
+{{--        <div class="card-footer text-center pt-0 px-lg-2 px-1">--}}
+{{--            <p class="mb-4 text-sm mx-auto">--}}
+{{--                Pas encore de compte ?--}}
+{{--                <a href="{{ route('register') }}" class="text-primary text-gradient font-weight-bold">Créer un compte</a>--}}
+{{--            </p>--}}
+{{--        </div>--}}
     </div>
 @endsection

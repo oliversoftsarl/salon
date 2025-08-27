@@ -78,30 +78,38 @@ class Checkout extends Component
                 'type' => 'sale',
                 'total' => $this->total,
                 'payment_method' => $this->payment_method,
+                // 'cashier_id' => auth()->id(), // si tu veux lier le caissier
             ]);
 
             foreach ($this->cart as $item) {
+                $unit = (float)$item['price'];
+                $qty = (int)$item['qty'];
+                $line = $unit * $qty;
+
+                // Respecte ton schéma: product_id/service_id + unit_price + line_total
                 TransactionItem::create([
                     'transaction_id' => $tx->id,
-                    'item_type' => $item['type'],
-                    'item_id' => $item['id'],
-                    'name' => $item['name'],
-                    'price' => $item['price'],
-                    'quantity' => $item['qty'],
-                    'subtotal' => $item['price'] * $item['qty'],
+                    'product_id'     => $item['type'] === 'product' ? $item['id'] : null,
+                    'service_id'     => $item['type'] === 'service' ? $item['id'] : null,
+                    'quantity'       => $qty,
+                    'unit_price'     => $unit,
+                    'line_total'     => $line,
                 ]);
 
+                // Mise à jour du stock uniquement pour les produits
                 if ($item['type'] === 'product') {
                     $p = Product::lockForUpdate()->find($item['id']);
                     if ($p) {
-                        $qty = min($item['qty'], max(0, $p->stock_quantity));
-                        $p->decrement('stock_quantity', $qty);
-                        StockMovement::create([
-                            'product_id' => $p->id,
-                            'quantity' => $qty,
-                            'direction' => 'out',
-                            'reason' => 'Vente',
-                        ]);
+                        $toDecrement = min($qty, max(0, (int)$p->stock_quantity));
+                        if ($toDecrement > 0) {
+                            $p->decrement('stock_quantity', $toDecrement);
+                            StockMovement::create([
+                                'product_id' => $p->id,
+                                'quantity' => $toDecrement,
+                                'direction' => 'out',
+                                'reason' => 'Vente',
+                            ]);
+                        }
                     }
                 }
             }

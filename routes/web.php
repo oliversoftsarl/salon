@@ -11,6 +11,8 @@ use App\Livewire\Appointments\Calendar as AppointmentsCalendar;
 use App\Livewire\Staff\Schedule as StaffSchedule;
 use App\Livewire\Pos\Checkout as PosCheckout;
 use App\Livewire\Users\Index as UsersIndex;
+use App\Livewire\Pos\TransactionsList as PosTransactionsList;
+
 
 Route::get('/', function () {
     return view('pages.dashboard');
@@ -55,6 +57,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/pos', PosCheckout::class)
         ->middleware('role:admin,cashier')
         ->name('pos.checkout');
+    Route::get('/pos/transactions', PosTransactionsList::class)
+        ->middleware('role:admin,cashier')
+        ->name('pos.transactions');
 
     // Gestion utilisateurs (admin only)
     Route::get('/users', UsersIndex::class)

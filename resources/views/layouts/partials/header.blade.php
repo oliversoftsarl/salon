@@ -77,8 +77,18 @@
             <span class="nav-link-text ms-1">Caisse</span>
           </a>
         </li>
+          <li class="nav-item">
+              @php $active = request()->routeIs('pos.transactions'); @endphp
+              <a class="nav-link {{ request()->routeIs('pos.transactions') }}" href="{{ route('pos.transactions') }}">
+                  <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                      <i class="ni-bullet-list-67 text-dark text-sm opacity-10"></i>
+                  </div>
+                  <span class="nav-link-text ms-1">Ventes</span>
+              </a>
+          </li>
 
-        {{-- Séparateur / Account pages --}}
+
+          {{-- Séparateur / Account pages --}}
         <li class="nav-item mt-3">
           <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Compte</h6>
         </li>

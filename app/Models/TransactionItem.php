@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class TransactionItem extends Model
 {
     protected $fillable = [
-        'transaction_id','product_id','service_id','quantity','unit_price','line_total'
+        'transaction_id','product_id','service_id','quantity','unit_price','line_total','stylist_id'
     ];
 
     public function transaction()
@@ -25,4 +25,8 @@ class TransactionItem extends Model
         return $this->belongsTo(Service::class);
     }
 
+    public function stylist()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'stylist_id');
+    }
 }

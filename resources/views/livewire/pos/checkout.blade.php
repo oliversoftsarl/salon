@@ -6,8 +6,10 @@
         </div>
     @endif
     @error('cart') <div class="alert alert-danger">{{ $message }}</div> @enderror
+
     <div class="row g-3">
-        <div class="col-lg-7">
+        {{-- Réduit l’espace du catalogue et augmente celui du panier --}}
+        <div class="col-lg-4">
             <div class="card mb-3">
                 <div class="card-header pb-0">
                     <h6 class="mb-0">Produits</h6>
@@ -29,6 +31,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="card mb-3">
                 <div class="card-header pb-0">
                     <h6 class="mb-0">Services</h6>
@@ -51,12 +54,15 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-5">
+
+        {{-- Panier élargi --}}
+        <div class="col-lg-8">
             <div class="card">
                 <div class="card-header pb-0 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Panier</h6>
                     <span class="badge bg-dark">{{ count($cart) }} article(s)</span>
                 </div>
+
                 <div class="table-responsive">
                     <table class="table align-items-center mb-0">
                         <thead>
@@ -71,7 +77,24 @@
                         <tbody>
                         @forelse($cart as $i => $it)
                             <tr>
-                                <td>{{ $it['name'] }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span>{{ $it['name'] }}</span>
+                                        @if(($it['type'] ?? '') === 'service')
+                                            <div class="mt-1">
+                                                <label class="form-label text-xs mb-1">Coiffeur</label>
+                                                <select class="form-select form-select-sm" wire:model="cart.{{ $i }}.stylist_id">
+                                                    <option value="">— Non attribué —</option>
+                                                    @isset($staff)
+                                                        @foreach($staff as $s)
+                                                            <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                                        @endforeach
+                                                    @endisset
+                                                </select>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td>{{ number_format($it['price'], 2, ',', ' ') }} €</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
@@ -91,8 +114,57 @@
                         </tbody>
                     </table>
                 </div>
+
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    {{-- Sélection / Création rapide client --}}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Client (optionnel)</label>
+                            <select class="form-select" wire:model="client_id">
+                                <option value="">— Aucun —</option>
+                                @isset($clients)
+                                    @foreach($clients as $c)
+                                        <option value="{{ $c['id'] }}">{{ $c['label'] }}</option>
+                                    @endforeach
+                                @endisset
+                            </select>
+                            @error('client_id') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" wire:click="$toggle('showNewClient')">
+                                {{ $showNewClient ? 'Fermer' : 'Nouveau client' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    @if($showNewClient)
+                        <div class="border rounded p-3 mt-3">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nom</label>
+                                    <input type="text" class="form-control" wire:model.defer="newClient_name" placeholder="Ex: Marie Dupont">
+                                    @error('newClient_name') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" wire:model.defer="newClient_email" placeholder="client@mail.com">
+                                    @error('newClient_email') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Téléphone</label>
+                                    <input type="text" class="form-control" wire:model.defer="newClient_phone" placeholder="+33 ...">
+                                    @error('newClient_phone') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button class="btn btn-primary btn-sm" wire:click="createClient">
+                                        Créer et sélectionner
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="d-flex justify-content-between mt-3">
                         <strong>Total</strong>
                         <strong>{{ number_format($this->total, 2, ',', ' ') }} €</strong>
                     </div>
@@ -106,6 +178,7 @@
                         </select>
                     </div>
                 </div>
+
                 <div class="card-footer text-end">
                     <button class="btn btn-success" wire:click="checkout" @disabled(empty($cart))>
                         <i class="ni ni-check-bold me-1"></i> Encaisser

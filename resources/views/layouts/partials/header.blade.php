@@ -86,6 +86,16 @@
                   <span class="nav-link-text ms-1">Ventes</span>
               </a>
           </li>
+          <li class="nav-item">
+              @php $active = request()->routeIs('inventory.supplies'); @endphp
+              <a class="nav-link {{ request()->routeIs('inventory.supplies') }}" href="{{ route('inventory.supplies') }}">
+                  <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+                      <i class="ni-delivery-fast"></i>
+                  </div>
+                  <span class="nav-link-text ms-1">Approvisionnements</span>
+              </a>
+          </li>
+
           <li class="nav-link">
               @php $active = request()->routeIs('inventory.consumptions'); @endphp
               <a class="nav-link {{ request()->routeIs('inventory.consumptions') }}" href="{{ route('inventory.consumptions') }}">

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Inventory\Supplies as InventorySupplies;
 
 use App\Livewire\Inventory\Consumptions as InventoryConsumptions;
 
@@ -69,4 +70,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/inventory/consumptions', InventoryConsumptions::class)
         ->middleware('role:admin,staff')
         ->name('inventory.consumptions');
+
+    Route::get('/inventory/supplies', InventorySupplies::class)
+        ->middleware('role:admin,staff')
+        ->name('inventory.supplies');
 });

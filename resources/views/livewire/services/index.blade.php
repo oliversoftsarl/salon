@@ -23,6 +23,7 @@
                         </button>
                     </div>
                 </div>
+                <br>
                 @if($editingId !== null)
                     <div class="card-body border-top">
                         <div class="row g-3">

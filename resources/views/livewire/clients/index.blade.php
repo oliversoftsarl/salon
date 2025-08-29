@@ -80,6 +80,7 @@
                     <table class="table align-items-center mb-0">
                         <thead>
                         <tr>
+                            <th>#</th>
                             <th>Nom</th>
                             <th>Email</th>
                             <th>Téléphone</th>
@@ -93,6 +94,7 @@
                         <tbody>
                         @forelse($clients as $c)
                             <tr>
+                                <td>{{ $loop->iteration }}</td>
                                 <td>{{ $c->name }}</td>
                                 <td>{{ $c->email }}</td>
                                 <td>{{ $c->phone ?? $c->phone_number }}</td>

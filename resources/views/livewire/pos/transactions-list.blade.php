@@ -25,7 +25,7 @@
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">Type d’article</label>
-                    <select class="form-select" wire:model="filter_type">
+                    <select class="form-select" wire:model="filter_type" wire:change="$refresh">
                         <option value="all">Tous</option>
                         <option value="products">Produits</option>
                         <option value="services">Services</option>
@@ -33,7 +33,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Type de transaction</label>
-                    <select class="form-select" wire:model="tx_type">
+                    <select class="form-select" wire:model="tx_type" wire:change="$refresh">
                         <option value="all">Toutes</option>
                         <option value="sale">Vente</option>
                         <option value="refund">Remboursement</option>
@@ -41,11 +41,11 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Du</label>
-                    <input type="date" class="form-control" wire:model="date_from">
+                    <input type="date" class="form-control" wire:model.debounce.300ms="date_from">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Au</label>
-                    <input type="date" class="form-control" wire:model="date_to">
+                    <input type="date" class="form-control" wire:model.debounce.300ms="date_to">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Recherche</label>
@@ -73,6 +73,7 @@
             <table class="table align-items-center mb-0">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Date</th>
                         <th>Type txn</th>
                         <th>Référence</th>
@@ -86,6 +87,7 @@
                 <tbody>
                 @forelse($items as $it)
                     <tr>
+                        <td>{{ $loop->iteration }}</td>
                         <td>{{ optional($it->transaction)->created_at?->format('d/m/Y H:i') }}</td>
                         <td>
                             <span class="badge {{ optional($it->transaction)->type === 'refund' ? 'bg-warning' : 'bg-success' }}">

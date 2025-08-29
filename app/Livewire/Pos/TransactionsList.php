@@ -21,10 +21,10 @@ class TransactionsList extends Component
     protected $queryString = [
         'filter_type' => ['except' => 'all'],
         'tx_type'     => ['except' => 'all'],
-        'date_from'   => ['except' => 'null'],
-        'date_to'     => ['except' => 'null'],
+        'date_from'   => ['except' => null],
+        'date_to'     => ['except' => null],
         'search'      => ['except' => ''],
-        'page'        => ['except' => '1'],
+        'page'        => ['except' => 1],
     ];
 
     public function mount(): void
@@ -44,8 +44,9 @@ class TransactionsList extends Component
     {
         $query = $this->buildQuery()->orderByDesc('id');
 
-        $items = $query->with(['transaction', 'product:id,name', 'service:id,name'])
-                       ->paginate(12);
+        $items = $query
+            ->with(['transaction', 'product:id,name', 'service:id,name'])
+            ->paginate(12);
 
         $pageTotal  = $items->getCollection()->sum('line_total');
         $grandTotal = $this->buildQuery()->sum('line_total');
@@ -59,24 +60,16 @@ class TransactionsList extends Component
 
     public function setPreset(string $preset): void
     {
-        $today        = Carbon::now()->toDateString();
-        $thisWeekFrom = Carbon::now()->startOfWeek()->toDateString();
-        $thisMonthFrom= Carbon::now()->startOfMonth()->toDateString();
+        $today         = Carbon::now()->toDateString();
+        $weekStart     = Carbon::now()->startOfWeek()->toDateString();
+        $monthStart    = Carbon::now()->startOfMonth()->toDateString();
 
-        switch ($preset) {
-            case 'today':
-                $this->date_from = $today;
-                $this->date_to   = $today;
-                break;
-            case 'week':
-                $this->date_from = $thisWeekFrom;
-                $this->date_to   = $today;
-                break;
-            case 'month':
-                $this->date_from = $thisMonthFrom;
-                $this->date_to   = $today;
-                break;
-        }
+        match ($preset) {
+            'today' => [$this->date_from, $this->date_to] = [$today, $today],
+            'week'  => [$this->date_from, $this->date_to] = [$weekStart, $today],
+            'month' => [$this->date_from, $this->date_to] = [$monthStart, $today],
+            default => null,
+        };
     }
 
     public function exportCsv()
@@ -86,28 +79,18 @@ class TransactionsList extends Component
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
 
-            // En-têtes CSV
-            fputcsv($out, [
-                'Date',
-                'Type txn',
-                'Référence',
-                'Article',
-                'Type article',
-                'PU',
-                'Qté',
-                'Total ligne',
-            ], ';');
+            fputcsv($out, ['Date','Type txn','Référence','Article','Type article','PU','Qté','Total ligne'], ';');
 
-            // On stream par chunks pour éviter la charge mémoire
             $this->buildQuery()
                 ->with(['transaction:id,type,reference,created_at', 'product:id,name', 'service:id,name'])
                 ->orderByDesc('id')
                 ->chunk(500, function ($chunk) use ($out) {
                     foreach ($chunk as $it) {
-                        $tx       = $it->transaction;
-                        $isProd   = !is_null($it->product_id);
-                        $label    = $isProd ? ($it->product->name ?? 'Produit #'.$it->product_id)
-                                            : ($it->service->name ?? 'Service #'.$it->service_id);
+                        $tx     = $it->transaction;
+                        $isProd = !is_null($it->product_id);
+                        $label  = $isProd
+                            ? ($it->product->name ?? 'Produit #'.$it->product_id)
+                            : ($it->service->name ?? 'Service #'.$it->service_id);
 
                         fputcsv($out, [
                             optional($tx)->created_at?->format('Y-m-d H:i:s'),
@@ -123,27 +106,34 @@ class TransactionsList extends Component
                 });
 
             fclose($out);
-        }, $fileName, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        }, $fileName, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     private function buildQuery(): Builder
     {
+        $from = $this->date_from ? Carbon::parse($this->date_from)->startOfDay() : null;
+        $to   = $this->date_to   ? Carbon::parse($this->date_to)->endOfDay()   : null;
+
         return TransactionItem::query()
-            ->whereHas('transaction', function ($t) {
-                if ($this->date_from) {
-                    $t->whereDate('created_at', '>=', Carbon::parse($this->date_from));
+            // Filtre période et type de transaction sur la relation 'transaction'
+            ->whereHas('transaction', function (Builder $t) use ($from, $to) {
+                if ($from && $to) {
+                    $t->whereBetween('created_at', [$from, $to]);
+                } elseif ($from) {
+                    $t->where('created_at', '>=', $from);
+                } elseif ($to) {
+                    $t->where('created_at', '<=', $to);
                 }
-                if ($this->date_to) {
-                    $t->whereDate('created_at', '<=', Carbon::parse($this->date_to));
-                }
+
                 if ($this->tx_type !== 'all') {
-                    $t->where('type', $this->tx_type); // 'sale' ou 'refund'
+                    // valeurs attendues: 'sale' ou 'refund'
+                    $t->where('type', $this->tx_type);
                 }
             })
+            // Type d'article
             ->when($this->filter_type === 'products', fn($q) => $q->whereNotNull('product_id'))
             ->when($this->filter_type === 'services', fn($q) => $q->whereNotNull('service_id'))
+            // Recherche
             ->when(trim($this->search) !== '', function ($q) {
                 $term = "%{$this->search}%";
                 $q->where(function ($qq) use ($term) {

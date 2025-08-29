@@ -86,12 +86,19 @@ class Index extends Component
 
         if ($this->editingId && $this->editingId > 0) {
             $p = Product::findOrFail($this->editingId);
-            $delta = (int)$data['stock_quantity'] - (int)$p->stock_quantity;
+            $current = (int) $p->stock_quantity;
+            $new     = (int) $data['stock_quantity'];
+            $delta   = $new - $current;
+
+            // Empêche un ajustement qui mettrait le stock sous 0
+            if ($delta < 0 && ($current + $delta) < 0) {
+                $this->addError('stock_quantity', 'Stock insuffisant pour appliquer cet ajustement.');
+                return;
+            }
 
             $p->update($data);
 
             if ($delta !== 0) {
-                // delta > 0 = entrée, delta < 0 = sortie
                 $this->recordStockMovement($p->id, $delta, 'Ajustement');
             }
 
@@ -147,18 +154,26 @@ class Index extends Component
             $this->addError('stock_quantity', 'La quantité doit être supérieure à 0.');
             return;
         }
-        $qty = min($qty, max(0, (int)$p->stock_quantity));
+
+        $available = max(0, (int)$p->stock_quantity);
+        if ($qty > $available) {
+            $this->addError('stock_quantity', 'Stock insuffisant. Disponible: '.$available);
+            return;
+        }
+
         $p->decrement('stock_quantity', $qty);
-        // sortie de stock = delta négatif
         $this->recordStockMovement($p->id, -$qty, 'Sortie manuelle');
         session()->flash('success', 'Stock décrémenté.');
     }
 
     private function recordStockMovement(int $productId, int $deltaSigned, string $reason, ?int $referenceId = null): void
     {
+        if ($deltaSigned === 0) {
+            return;
+        }
         StockMovement::create([
             'product_id'   => $productId,
-            'qty_change'   => $deltaSigned, // signé: +entrée, -sortie
+            'qty_change'   => $deltaSigned, // +entrée, -sortie
             'reason'       => $reason,
             'reference_id' => $referenceId,
         ]);

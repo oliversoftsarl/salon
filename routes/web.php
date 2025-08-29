@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-use Livewire\Livewire;
+use App\Livewire\Inventory\Consumptions as InventoryConsumptions;
 
 use App\Livewire\Services\Index as ServicesIndex;
 use App\Livewire\Products\Index as ProductsIndex;
@@ -65,4 +65,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/users', UsersIndex::class)
         ->middleware('role:admin')
         ->name('users.index');
+
+    Route::get('/inventory/consumptions', InventoryConsumptions::class)
+        ->middleware('role:admin,staff')
+        ->name('inventory.consumptions');
 });

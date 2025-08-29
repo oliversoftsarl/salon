@@ -248,6 +248,24 @@ class Checkout extends Component
             'client_id' => ['nullable', 'exists:clients,id'],
         ]);
 
+        // Pré-contrôle: tous les produits du panier doivent avoir un stock suffisant
+        $productNeeds = [];
+        foreach ($this->cart as $item) {
+            if (($item['type'] ?? null) === 'product') {
+                $productNeeds[$item['id']] = ($productNeeds[$item['id']] ?? 0) + (int)$item['qty'];
+            }
+        }
+        if (!empty($productNeeds)) {
+            $products = Product::whereIn('id', array_keys($productNeeds))->get()->keyBy('id');
+            foreach ($productNeeds as $pid => $needed) {
+                $available = (int)($products[$pid]->stock_quantity ?? 0);
+                if ($needed > $available) {
+                    $this->addError('cart', 'Stock insuffisant pour le produit "'.($products[$pid]->name ?? ('#'.$pid)).'". Disponible: '.$available.', demandé: '.$needed);
+                    return;
+                }
+            }
+        }
+
         DB::transaction(function () {
             $tx = Transaction::create([
                 'reference'      => null,
@@ -276,21 +294,22 @@ class Checkout extends Component
                 ]);
 
                 if ($item['type'] === 'product') {
-                    $p = Product::lockForUpdate()->find($item['id']);
-                    if ($p) {
-                        $toDecrement = min($qty, max(0, (int)$p->stock_quantity));
-                        if ($toDecrement > 0) {
-                            $p->decrement('stock_quantity', $toDecrement);
+                    $p = Product::lockForUpdate()->findOrFail($item['id']);
+                    $available = (int)$p->stock_quantity;
 
-                            // Enregistre un mouvement avec qty_change négatif et référence vers la transaction
-                            StockMovement::create([
-                                'product_id'   => $p->id,
-                                'qty_change'   => -$toDecrement,
-                                'reason'       => 'Vente',
-                                'reference_id' => $tx->id,
-                            ]);
-                        }
+                    // Re-vérifie au niveau DB pour éviter les races
+                    if ($qty > $available) {
+                        throw new \RuntimeException('Stock insuffisant pour '.$p->name.'.');
                     }
+
+                    $p->decrement('stock_quantity', $qty);
+
+                    StockMovement::create([
+                        'product_id'   => $p->id,
+                        'qty_change'   => -$qty,
+                        'reason'       => 'Vente',
+                        'reference_id' => $tx->id,
+                    ]);
                 }
             }
         });

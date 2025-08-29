@@ -142,7 +142,7 @@
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <label class="form-label">Nom</label>
-                                    <input type="text" class="form-control" wire:model.defer="newClient_name" placeholder="Ex: Marie Dupont">
+                                    <input type="text" class="form-control" wire:model.defer="newClient_name" placeholder="Prénom Nom">
                                     @error('newClient_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
@@ -155,6 +155,34 @@
                                     <input type="text" class="form-control" wire:model.defer="newClient_phone" placeholder="+33 ...">
                                     @error('newClient_phone') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Date de naissance</label>
+                                    <input type="date" class="form-control" wire:model.defer="newClient_birthdate">
+                                    @error('newClient_birthdate') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Genre</label>
+                                    <select class="form-select" wire:model.defer="newClient_gender">
+                                        <option value="">—</option>
+                                        <option value="male">Homme</option>
+                                        <option value="female">Femme</option>
+                                        <option value="other">Autre</option>
+                                    </select>
+                                    @error('newClient_gender') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Points fidélité</label>
+                                    <input type="number" min="0" class="form-control" wire:model.defer="newClient_loyalty_point">
+                                    @error('newClient_loyalty_point') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Notes</label>
+                                    <textarea class="form-control" rows="2" wire:model.defer="newClient_notes"></textarea>
+                                    @error('newClient_notes') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+
                                 <div class="col-12 text-end">
                                     <button class="btn btn-primary btn-sm" wire:click="createClient">
                                         Créer et sélectionner

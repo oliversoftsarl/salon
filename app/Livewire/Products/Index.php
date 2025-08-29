@@ -86,19 +86,20 @@ class Index extends Component
 
         if ($this->editingId && $this->editingId > 0) {
             $p = Product::findOrFail($this->editingId);
-            $delta = $data['stock_quantity'] - (int)$p->stock_quantity;
+            $delta = (int)$data['stock_quantity'] - (int)$p->stock_quantity;
 
             $p->update($data);
 
             if ($delta !== 0) {
-                $this->recordStockMovement($p->id, $delta, $delta > 0 ? 'in' : 'out', 'Ajustement');
+                // delta > 0 = entrée, delta < 0 = sortie
+                $this->recordStockMovement($p->id, $delta, 'Ajustement');
             }
 
             session()->flash('success', 'Produit mis à jour.');
         } else {
             $p = Product::create($data);
-            if ($p->stock_quantity > 0) {
-                $this->recordStockMovement($p->id, (int)$p->stock_quantity, 'in', 'Stock initial');
+            if ((int)$p->stock_quantity > 0) {
+                $this->recordStockMovement($p->id, (int)$p->stock_quantity, 'Stock initial');
             }
             session()->flash('success', 'Produit créé.');
         }
@@ -129,7 +130,7 @@ class Index extends Component
             return;
         }
         $p->increment('stock_quantity', $qty);
-        $this->recordStockMovement($p->id, $qty, 'in', 'Entrée manuelle');
+        $this->recordStockMovement($p->id, $qty, 'Entrée manuelle');
         session()->flash('success', 'Stock ajouté.');
     }
 
@@ -146,19 +147,20 @@ class Index extends Component
             $this->addError('stock_quantity', 'La quantité doit être supérieure à 0.');
             return;
         }
-        $qty = min($qty, max(0, $p->stock_quantity));
+        $qty = min($qty, max(0, (int)$p->stock_quantity));
         $p->decrement('stock_quantity', $qty);
-        $this->recordStockMovement($p->id, $qty, 'out', 'Sortie manuelle');
+        // sortie de stock = delta négatif
+        $this->recordStockMovement($p->id, -$qty, 'Sortie manuelle');
         session()->flash('success', 'Stock décrémenté.');
     }
 
-    private function recordStockMovement(int $productId, int $quantity, string $direction, string $reason): void
+    private function recordStockMovement(int $productId, int $deltaSigned, string $reason, ?int $referenceId = null): void
     {
         StockMovement::create([
-            'product_id' => $productId,
-            'quantity' => $quantity,
-            'direction' => $direction,
-            'reason' => $reason,
+            'product_id'   => $productId,
+            'qty_change'   => $deltaSigned, // signé: +entrée, -sortie
+            'reason'       => $reason,
+            'reference_id' => $referenceId,
         ]);
     }
 

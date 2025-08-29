@@ -28,6 +28,10 @@ class Checkout extends Component
     public string $newClient_name = '';
     public ?string $newClient_email = null;
     public ?string $newClient_phone = null;
+    public ?string $newClient_birthdate = null;
+    public ?string $newClient_gender = null;
+    public ?string $newClient_notes = null;
+    public ?int $newClient_loyalty_point = 0;
 
     public function render()
     {
@@ -118,21 +122,65 @@ class Checkout extends Component
             'newClient_name'  => ['required', 'string', 'max:255'],
             'newClient_email' => ['nullable', 'email', 'max:255', Rule::unique('clients', 'email')],
             'newClient_phone' => ['nullable', 'string', 'max:50'],
-        ], [
-            'newClient_name.required' => 'Le nom est requis.',
-            'newClient_email.email'   => 'Email invalide.',
-            'newClient_email.unique'  => 'Cet email existe déjà.',
+            'newClient_birthdate' => ['nullable', 'date'],
+            'newClient_gender' => ['nullable', 'string', 'max:16'],
+            'newClient_loyalty_point' => ['nullable', 'integer', 'min:0'],
+            'newClient_notes' => ['nullable', 'string'],
         ]);
 
-        $data = $this->buildClientDataFromInputs();
+        $cols = Schema::getColumnListing((new Client)->getTable());
+        $data = [];
+
+        // name / first_name / last_name
+        if (in_array('first_name', $cols, true)) {
+            $parts = preg_split('/\s+/', trim($this->newClient_name));
+            $first = $parts[0] ?? $this->newClient_name;
+            $last  = isset($parts[1]) ? implode(' ', array_slice($parts, 1)) : null;
+            $data['first_name'] = $first;
+            if (in_array('last_name', $cols, true)) {
+                $data['last_name'] = $last;
+            }
+        } elseif (in_array('name', $cols, true)) {
+            $data['name'] = $this->newClient_name;
+        } elseif (in_array('names', $cols, true)) {
+            $data['names'] = $this->newClient_name;
+        }
+
+        if (in_array('email', $cols, true)) {
+            $data['email'] = $this->newClient_email;
+        }
+        if (in_array('phone', $cols, true)) {
+            $data['phone'] = $this->newClient_phone;
+        } elseif (in_array('phone_number', $cols, true)) {
+            $data['phone_number'] = $this->newClient_phone;
+        }
+
+        if (in_array('birthdate', $cols, true)) {
+            $data['birthdate'] = $this->newClient_birthdate ?: null;
+        }
+        if (in_array('gender', $cols, true)) {
+            $data['gender'] = $this->newClient_gender ?: null;
+        }
+        if (in_array('loyalty_point', $cols, true)) {
+            $data['loyalty_point'] = (int)($this->newClient_loyalty_point ?? 0);
+        }
+        if (in_array('notes', $cols, true)) {
+            $data['notes'] = $this->newClient_notes ?: null;
+        }
 
         $client = Client::create($data);
 
         $this->client_id = $client->id;
         $this->showNewClient = false;
+
+        // reset form
         $this->newClient_name = '';
         $this->newClient_email = null;
         $this->newClient_phone = null;
+        $this->newClient_birthdate = null;
+        $this->newClient_gender = null;
+        $this->newClient_notes = null;
+        $this->newClient_loyalty_point = 0;
 
         session()->flash('success', 'Client créé et sélectionné.');
     }
@@ -233,11 +281,13 @@ class Checkout extends Component
                         $toDecrement = min($qty, max(0, (int)$p->stock_quantity));
                         if ($toDecrement > 0) {
                             $p->decrement('stock_quantity', $toDecrement);
+
+                            // Enregistre un mouvement avec qty_change négatif et référence vers la transaction
                             StockMovement::create([
-                                'product_id' => $p->id,
-                                'quantity'   => $toDecrement,
-                                'direction'  => 'out',
-                                'reason'     => 'Vente',
+                                'product_id'   => $p->id,
+                                'qty_change'   => -$toDecrement,
+                                'reason'       => 'Vente',
+                                'reference_id' => $tx->id,
                             ]);
                         }
                     }
@@ -250,6 +300,7 @@ class Checkout extends Component
         $this->client_id = null;
         session()->flash('success', 'Vente enregistrée.');
     }
+
 
     private function addToCart(string $type, int $id, string $name, float $price, int $qty): void
     {

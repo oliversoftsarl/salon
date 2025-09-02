@@ -1,6 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Inventory\Supplies as InventorySupplies;
+
+use App\Livewire\Inventory\Consumptions as InventoryConsumptions;
+
+use App\Livewire\Services\Index as ServicesIndex;
+use App\Livewire\Products\Index as ProductsIndex;
+use App\Livewire\Clients\Index as ClientsIndex;
+use App\Livewire\Appointments\Calendar as AppointmentsCalendar;
+use App\Livewire\Staff\Schedule as StaffSchedule;
+use App\Livewire\Pos\Checkout as PosCheckout;
+use App\Livewire\Users\Index as UsersIndex;
+use App\Livewire\Pos\TransactionsList as PosTransactionsList;
+
 
 Route::get('/', function () {
     return view('pages.dashboard');
@@ -14,4 +27,51 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return view('pages.dashboard');
     })->name('dashboard');
+
+    // Remplacer l'ancienne ligne qui appelait "pages.profile" par la bonne vue Jetstream:
+    Route::get('/user/profile', function () {
+        return view('profile.show'); // <- bonne vue: resources/views/profile/show.blade.php
+    })->name('profile.show');
+});
+
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/appointments', AppointmentsCalendar::class)
+        ->middleware('role:admin,staff')
+        ->name('appointments.calendar');
+
+    Route::get('/services', ServicesIndex::class)
+        ->middleware('role:admin,staff')
+        ->name('services.index');
+
+    Route::get('/products', ProductsIndex::class)
+        ->middleware('role:admin,staff')
+        ->name('products.index');
+
+    Route::get('/clients', ClientsIndex::class)
+        ->middleware('role:admin,staff')
+        ->name('clients.index');
+
+    Route::get('/staff/schedule', StaffSchedule::class)
+        ->middleware('role:admin')
+        ->name('staff.schedule');
+
+    Route::get('/pos', PosCheckout::class)
+        ->middleware('role:admin,cashier')
+        ->name('pos.checkout');
+    Route::get('/pos/transactions', PosTransactionsList::class)
+        ->middleware('role:admin,cashier')
+        ->name('pos.transactions');
+
+    // Gestion utilisateurs (admin only)
+    Route::get('/users', UsersIndex::class)
+        ->middleware('role:admin')
+        ->name('users.index');
+
+    Route::get('/inventory/consumptions', InventoryConsumptions::class)
+        ->middleware('role:admin,staff')
+        ->name('inventory.consumptions');
+
+    Route::get('/inventory/supplies', InventorySupplies::class)
+        ->middleware('role:admin,staff')
+        ->name('inventory.supplies');
 });

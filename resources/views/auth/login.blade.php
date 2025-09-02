@@ -1,48 +1,45 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+@extends('layouts.auth')
 
-        <x-validation-errors class="mb-4" />
+@section('content')
+    <div class="card card-plain">
+        <div class="card-header pb-0 text-start">
+            <h4 class="font-weight-bolder">Se connecter</h4>
+            <p class="mb-0">Entre ton email et ton mot de passe</p>
+        </div>
+        <div class="card-body">
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
 
-        @session('status')
-            <div class="mb-4 font-medium text-sm text-green-600 dark:text-green-400">
-                {{ $value }}
-            </div>
-        @endsession
-
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
-
-            <div>
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            </div>
-
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="current-password" />
-            </div>
-
-            <div class="block mt-4">
-                <label for="remember_me" class="flex items-center">
-                    <x-checkbox id="remember_me" name="remember" />
-                    <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Remember me') }}</span>
-                </label>
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                @if (Route::has('password.request'))
-                    <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('password.request') }}">
-                        {{ __('Forgot your password?') }}
-                    </a>
-                @endif
-
-                <x-button class="ms-4">
-                    {{ __('Log in') }}
-                </x-button>
-            </div>
-        </form>
-    </x-authentication-card>
-</x-guest-layout>
+            <form role="form" method="POST" action="{{ route('login') }}">
+                @csrf
+                <div class="mb-3">
+                    <input type="email" class="form-control form-control-lg" placeholder="Email" name="email" value="{{ old('email') }}" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control form-control-lg" placeholder="Mot de passe" name="password" required>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
+                    <label class="form-check-label" for="rememberMe">Se souvenir de moi</label>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-lg btn-primary w-100 mt-4 mb-0">Se connecter</button>
+                </div>
+            </form>
+        </div>
+{{--        <div class="card-footer text-center pt-0 px-lg-2 px-1">--}}
+{{--            <p class="mb-4 text-sm mx-auto">--}}
+{{--                Pas encore de compte ?--}}
+{{--                <a href="{{ route('register') }}" class="text-primary text-gradient font-weight-bold">Créer un compte</a>--}}
+{{--            </p>--}}
+{{--        </div>--}}
+    </div>
+@endsection

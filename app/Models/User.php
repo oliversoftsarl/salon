@@ -29,6 +29,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'active',
     ];
 
     /**
@@ -57,11 +59,22 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'active' => 'boolean',
+    ];
+
+    public function hasRole(string|array $roles): bool
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        $userRole = $this->role ?? 'staff';
+        if (is_array($roles)) {
+            return in_array($userRole, $roles, true);
+        }
+        return $userRole === $roles;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
     }
 }

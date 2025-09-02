@@ -38,7 +38,6 @@
           </a>
         </li>
 
-        {{-- Domaine: Clients --}}
         <li class="nav-item">
           <a class="nav-link {{ request()->routeIs('clients.*') ? 'active' : '' }}" href="{{ route('clients.index') }}">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -48,7 +47,6 @@
           </a>
         </li>
 
-        {{-- Domaine: Rendez-vous --}}
         <li class="nav-item">
           <a class="nav-link {{ request()->routeIs('appointments.*') ? 'active' : '' }}" href="{{ route('appointments.calendar') }}">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -58,7 +56,6 @@
           </a>
         </li>
 
-        {{-- Domaine: Staff --}}
         <li class="nav-item">
           <a class="nav-link {{ request()->routeIs('staff.*') ? 'active' : '' }}" href="{{ route('staff.schedule') }}">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -68,7 +65,6 @@
           </a>
         </li>
 
-        {{-- Domaine: Caisse / POS --}}
         <li class="nav-item">
           <a class="nav-link {{ request()->routeIs('pos.*') ? 'active' : '' }}" href="{{ route('pos.checkout') }}">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -112,7 +108,6 @@
         </li>
 
         @auth
-          {{-- Profil (Jetstream/Fortify) --}}
           <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('profile.show') ? 'active' : '' }}" href="{{ route('profile.show') }}">
               <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
@@ -130,7 +125,6 @@
                       <span class="nav-link-text ms-1">Utilisateurs</span>
                   </a>
           </li>
-          {{-- Déconnexion --}}
           <li class="nav-item">
             <form method="POST" action="{{ route('logout') }}" class="d-inline">
               @csrf

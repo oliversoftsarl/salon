@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->integer('quantity_received');
             $table->decimal('unit_cost', 10, 2)->nullable(); // coût unitaire (optionnel)
-            $table->string('supplier', 255)->nullable();
+            $table->string('supplier', 190)->nullable();
             $table->date('received_at')->index();
             $table->text('notes')->nullable();
             $table->timestamps();

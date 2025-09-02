@@ -8,7 +8,6 @@
     @error('cart') <div class="alert alert-danger">{{ $message }}</div> @enderror
 
     <div class="row g-3">
-        {{-- Réduit l’espace du catalogue et augmente celui du panier --}}
         <div class="col-lg-4">
             <div class="card mb-3">
                 <div class="card-header pb-0">
@@ -55,7 +54,6 @@
             </div>
         </div>
 
-        {{-- Panier élargi --}}
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header pb-0 d-flex justify-content-between align-items-center">

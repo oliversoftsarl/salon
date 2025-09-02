@@ -74,9 +74,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/inventory/supplies', InventorySupplies::class)
         ->middleware('role:admin,staff')
         ->name('inventory.supplies');
-});
 
-Route::get('/download-receipt/{transaction}', function ($transactionId) {
+
+    Route::get('/download-receipt/{transaction}', function ($transactionId) {
     $transaction = Transaction::with(['items.product', 'items.service', 'items.stylist', 'client'])
         ->findOrFail($transactionId);
     $pdf = Pdf::loadView('pdf.receipt', [
@@ -93,3 +93,6 @@ Route::get('/download-receipt/{transaction}', function ($transactionId) {
     $pdf->setPaper([0, 0, 210, 500], 'portrait'); // 70mm ≈ 210 points
     return $pdf->download('receipt-'.$transaction->id.'.pdf');
 })->name('download.receipt');
+});
+
+

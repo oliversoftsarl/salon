@@ -14,6 +14,9 @@ use App\Livewire\Pos\Checkout as PosCheckout;
 use App\Livewire\Users\Index as UsersIndex;
 use App\Livewire\Pos\TransactionsList as PosTransactionsList;
 
+use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 Route::middleware([
     'auth:sanctum',
@@ -72,3 +75,21 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('role:admin,staff')
         ->name('inventory.supplies');
 });
+
+Route::get('/download-receipt/{transaction}', function ($transactionId) {
+    $transaction = Transaction::with(['items.product', 'items.service', 'items.stylist', 'client'])
+        ->findOrFail($transactionId);
+    $pdf = Pdf::loadView('pdf.receipt', [
+        'transaction' => $transaction,
+        'company' => [
+            // 'name' => config('app.name', 'Salon de Coiffure Gobel'),
+            'name' => 'Salon de Coiffure Gobel',
+            'address' => 'Q. Office 1 Kanisa la mungu',
+            'city' => 'NK Goma',
+            'phone' => '243 990 378 202',
+        ]
+    ]);
+    // Format personnalisé pour ticket (70mm de large)
+    $pdf->setPaper([0, 0, 210, 500], 'portrait'); // 70mm ≈ 210 points
+    return $pdf->download('receipt-'.$transaction->id.'.pdf');
+})->name('download.receipt');

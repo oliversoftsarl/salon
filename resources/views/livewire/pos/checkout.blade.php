@@ -213,4 +213,24 @@
             </div>
         </div>
     </div>
+
+
+    @script
+    <script>
+        // Écouter l'événement pour télécharger le reçu
+        $wire.on('download-receipt', () => {
+            console.log('Événement download-receipt reçu');
+            
+            // Vérifier que l'ID de transaction est disponible
+            if ($wire.transactionData && $wire.transactionData.id) {
+                console.log('Téléchargement du reçu pour la transaction:', $wire.transactionData.id);
+                
+                // Ouvrir la route de téléchargement dans une nouvelle fenêtre
+                window.open('/download-receipt/' + $wire.transactionData.id, '_blank');
+            } else {
+                console.error('Données de transaction manquantes');
+            }
+        });
+    </script>
+    @endscript
 </div>

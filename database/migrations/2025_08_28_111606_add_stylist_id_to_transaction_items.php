@@ -14,8 +14,7 @@ return new class extends Migration
                     ->nullable()
                     ->after('service_id')
                     ->constrained('users')
-                    ->nullOnDelete()
-                    ->index();
+                    ->nullOnDelete();
             }
         });
     }

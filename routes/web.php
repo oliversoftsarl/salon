@@ -15,22 +15,20 @@ use App\Livewire\Users\Index as UsersIndex;
 use App\Livewire\Pos\TransactionsList as PosTransactionsList;
 
 
-Route::get('/', function () {
-    return view('pages.dashboard');
-});
-
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
+    Route::get('/', function () {
+        return view('pages.dashboard');
+    });
     Route::get('/dashboard', function () {
         return view('pages.dashboard');
     })->name('dashboard');
 
-    // Remplacer l'ancienne ligne qui appelait "pages.profile" par la bonne vue Jetstream:
     Route::get('/user/profile', function () {
-        return view('profile.show'); // <- bonne vue: resources/views/profile/show.blade.php
+        return view('profile.show');
     })->name('profile.show');
 });
 
@@ -62,7 +60,6 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('role:admin,cashier')
         ->name('pos.transactions');
 
-    // Gestion utilisateurs (admin only)
     Route::get('/users', UsersIndex::class)
         ->middleware('role:admin')
         ->name('users.index');

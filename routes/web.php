@@ -23,10 +23,20 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
+    // Redirection intelligente selon le rôle
     Route::get('/', function () {
+        $user = auth()->user();
+        if ($user && $user->role === 'cashier') {
+            return redirect()->route('pos.checkout');
+        }
         return view('pages.dashboard');
     });
+
     Route::get('/dashboard', function () {
+        $user = auth()->user();
+        if ($user && $user->role === 'cashier') {
+            return redirect()->route('pos.checkout');
+        }
         return view('pages.dashboard');
     })->name('dashboard');
 

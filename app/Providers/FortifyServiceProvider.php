@@ -13,6 +13,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use App\Http\Responses\LoginResponse;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -23,7 +25,8 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Enregistrer la réponse de connexion personnalisée
+        $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
     }
 
     /**

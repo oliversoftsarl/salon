@@ -77,4 +77,35 @@ class User extends Authenticatable
     {
         return $this->hasRole('admin');
     }
+
+    public function isCashier(): bool
+    {
+        return $this->hasRole('cashier');
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->hasRole('staff');
+    }
+
+    /**
+     * Vérifie si l'utilisateur peut accéder à une fonctionnalité
+     */
+    public function canAccess(string $feature): bool
+    {
+        $permissions = [
+            'dashboard' => ['admin', 'staff'],
+            'pos' => ['admin', 'cashier'],
+            'transactions' => ['admin', 'cashier'],
+            'services' => ['admin', 'staff'],
+            'products' => ['admin', 'staff'],
+            'clients' => ['admin', 'staff'],
+            'appointments' => ['admin', 'staff'],
+            'staff' => ['admin'],
+            'inventory' => ['admin', 'staff'],
+            'users' => ['admin'],
+        ];
+
+        return isset($permissions[$feature]) && in_array($this->role, $permissions[$feature], true);
+    }
 }

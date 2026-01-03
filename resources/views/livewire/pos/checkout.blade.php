@@ -508,7 +508,7 @@
         printWindow.document.close();
     }
 
-    // Écouter l'événement de transaction complétée pour auto-impression optionnelle
+    // Écouter l'événement de transaction complétée pour auto-impression optionnele
     $wire.on('transaction-completed', (data) => {
         // Notification sonore de succès (optionnel)
         try {

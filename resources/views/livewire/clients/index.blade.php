@@ -81,35 +81,61 @@
                     <table class="table align-items-center mb-0">
                         <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Nom</th>
-                            <th>Email</th>
-                            <th>Téléphone</th>
-                            <th>Date naissance</th>
-                            <th>Genre</th>
-                            <th>Points</th>
-                            <th>Notes</th>
-                            <th class="text-end">Actions</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3" style="width: 40px;">#</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nom</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Contact</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Infos</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Points</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 100px;">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
                         @forelse($clients as $c)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $c->name }}</td>
-                                <td>{{ $c->email }}</td>
-                                <td>{{ $c->phone ?? $c->phone_number }}</td>
-                                <td>{{ optional($c->birthdate)->format('d/m/Y') }}</td>
-                                <td>{{ $c->gender }}</td>
-                                <td><span class="badge bg-info">{{ (int)($c->loyalty_point ?? 0) }}</span></td>
-                                <td class="text-truncate" style="max-width: 260px">{{ $c->notes }}</td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary" wire:click="edit({{ $c->id }})">Éditer</button>
-                                    <button class="btn btn-sm btn-outline-danger" wire:click="delete({{ $c->id }})" onclick="return confirm('Supprimer ce client ?')">Supprimer</button>
+                                <td class="ps-3">
+                                    <span class="text-xs text-secondary">{{ $loop->iteration }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-sm font-weight-bold text-truncate" style="max-width: 150px;" title="{{ $c->name }}">{{ $c->name }}</span>
+                                        <span class="text-xs text-secondary d-md-none">{{ $c->phone ?? $c->phone_number }}</span>
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-xs text-truncate" style="max-width: 150px;" title="{{ $c->email }}">{{ $c->email ?? '—' }}</span>
+                                        <span class="text-xs text-secondary">{{ $c->phone ?? $c->phone_number ?? '—' }}</span>
+                                    </div>
+                                </td>
+                                <td class="d-none d-lg-table-cell">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-xs">
+                                            @if($c->gender)
+                                                <span class="badge bg-{{ $c->gender === 'male' ? 'primary' : ($c->gender === 'female' ? 'pink' : 'secondary') }} badge-sm me-1">
+                                                    {{ $c->gender === 'male' ? 'H' : ($c->gender === 'female' ? 'F' : 'A') }}
+                                                </span>
+                                            @endif
+                                            {{ optional($c->birthdate)->format('d/m/Y') ?? '' }}
+                                        </span>
+                                        @if($c->notes)
+                                            <span class="text-xs text-muted text-truncate" style="max-width: 120px;" title="{{ $c->notes }}">{{ $c->notes }}</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-gradient-info">{{ (int)($c->loyalty_point ?? 0) }}</span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="edit({{ $c->id }})" title="Modifier">
+                                        <i class="ni ni-ruler-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="delete({{ $c->id }})" onclick="return confirm('Supprimer ce client ?')" title="Supprimer">
+                                        <i class="ni ni-fat-remove"></i>
+                                    </button>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="text-center py-4 text-muted">Aucun client</td></tr>
+                            <tr><td colspan="6" class="text-center py-4 text-muted">Aucun client</td></tr>
                         @endforelse
                         </tbody>
                     </table>

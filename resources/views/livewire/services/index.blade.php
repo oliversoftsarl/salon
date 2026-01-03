@@ -71,27 +71,47 @@
                     <table class="table align-items-center mb-0">
                         <thead>
                         <tr>
-                            <th>Nom</th>
-                            <th>Durée</th>
-                            <th>Prix</th>
-                            <th>Type</th>
-                            <th>Actif</th>
-                            <th class="text-end">Actions</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Service</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 80px;">Durée</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end" style="width: 90px;">Prix</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-md-table-cell" style="width: 80px;">Type</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Statut</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 100px;">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
                         @forelse($services as $service)
                             <tr>
-                                <td>{{ $service->name }}</td>
-                                <td><span class="badge bg-secondary">{{ $service->duration_minutes }} min</span></td>
-                                <td>{{ number_format($service->price, 2, ',', ' ') }} €</td>
-                                <td>{{ ucfirst($service->service_type) }}</td>
-                                <td>
-                                    <span class="badge {{ $service->active ? 'bg-success' : 'bg-dark' }}">{{ $service->active ? 'Actif' : 'Inactif' }}</span>
+                                <td class="ps-3">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-sm font-weight-bold text-truncate" style="max-width: 200px;" title="{{ $service->name }}">{{ $service->name }}</span>
+                                        @if($service->description)
+                                            <span class="text-xs text-muted text-truncate d-none d-lg-inline" style="max-width: 200px;" title="{{ $service->description }}">{{ $service->description }}</span>
+                                        @endif
+                                        <span class="d-md-none text-xs text-secondary">{{ ucfirst($service->service_type) }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ $service->duration_minutes }} min</span>
                                 </td>
                                 <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary" wire:click="edit({{ $service->id }})">Éditer</button>
-                                    <button class="btn btn-sm btn-outline-danger" wire:click="delete({{ $service->id }})" onclick="return confirm('Supprimer ce service ?')">Supprimer</button>
+                                    <span class="text-sm font-weight-bold">{{ number_format($service->price, 2, ',', ' ') }} €</span>
+                                </td>
+                                <td class="text-center d-none d-md-table-cell">
+                                    <span class="text-xs">{{ ucfirst($service->service_type) }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-{{ $service->active ? 'success' : 'secondary' }}">
+                                        {{ $service->active ? 'Actif' : 'Inactif' }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="edit({{ $service->id }})" title="Modifier">
+                                        <i class="ni ni-ruler-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="delete({{ $service->id }})" onclick="return confirm('Supprimer ce service ?')" title="Supprimer">
+                                        <i class="ni ni-fat-remove"></i>
+                                    </button>
                                 </td>
                             </tr>
                         @empty

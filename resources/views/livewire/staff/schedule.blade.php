@@ -106,22 +106,31 @@
                         <table class="table align-items-center mb-0">
                             <thead>
                             <tr>
-                                <th>Début</th>
-                                <th>Fin</th>
-                                <th>Récurrente</th>
-                                <th class="text-end">Actions</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Début</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Fin</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 90px;">Récurrente</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 80px;">Actions</th>
                             </tr>
                             </thead>
                             <tbody>
                             @forelse($breaks as $b)
                                 <tr>
-                                    <td>{{ \Carbon\Carbon::parse($b->start_at)->format('d/m/Y H:i') }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($b->end_at)->format('d/m/Y H:i') }}</td>
-                                    <td>
-                                        <span class="badge {{ $b->recurring ? 'bg-success' : 'bg-dark' }}">{{ $b->recurring ? 'Oui' : 'Non' }}</span>
+                                    <td class="ps-3">
+                                        <div class="d-flex flex-column">
+                                            <span class="text-sm font-weight-bold">{{ \Carbon\Carbon::parse($b->start_at)->format('d/m/Y H:i') }}</span>
+                                            <span class="text-xs text-secondary d-md-none">→ {{ \Carbon\Carbon::parse($b->end_at)->format('H:i') }}</span>
+                                        </div>
                                     </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-danger" wire:click="deleteBreak({{ $b->id }})" onclick="return confirm('Supprimer cette pause ?')">Supprimer</button>
+                                    <td class="d-none d-md-table-cell">
+                                        <span class="text-sm">{{ \Carbon\Carbon::parse($b->end_at)->format('d/m/Y H:i') }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ $b->recurring ? 'success' : 'secondary' }}">{{ $b->recurring ? 'Oui' : 'Non' }}</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="deleteBreak({{ $b->id }})" onclick="return confirm('Supprimer cette pause ?')" title="Supprimer">
+                                            <i class="ni ni-fat-remove"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             @empty

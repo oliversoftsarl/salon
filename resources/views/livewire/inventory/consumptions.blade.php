@@ -104,32 +104,47 @@
                         <table class="table align-items-center mb-0">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Produit</th>
-                                    <th>Qté</th>
-                                    <th>Stock restant</th>
-                                    <th>Staff</th>
-                                    <th>Notes</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3" style="width: 90px;">Date</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Produit</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 50px;">Qté</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-md-table-cell" style="width: 70px;">Restant</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Staff</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-xl-table-cell">Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($consumptions as $c)
                                     <tr>
-                                        <td>{{ $c->used_at?->format('d/m/Y') }}</td>
-                                        <td>
-                                            {{ $c->product->name ?? '—' }}
-                                            @php
-                                                $left = $c->product->stock_quantity ?? null;
-                                                $threshold = $c->product->low_stock_threshold ?? 0;
-                                            @endphp
-                                            @if($left !== null && $threshold > 0 && $left <= $threshold)
-                                                <span class="badge bg-warning ms-1">Bas stock</span>
-                                            @endif
+                                        <td class="ps-3">
+                                            <span class="text-xs">{{ $c->used_at?->format('d/m/Y') }}</span>
                                         </td>
-                                        <td><span class="badge bg-dark">{{ $c->quantity_used }}</span></td>
-                                        <td>{{ $left !== null ? $left : '—' }}</td>
-                                        <td>{{ $c->staff->name ?? '—' }}</td>
-                                        <td class="text-truncate" style="max-width:240px">{{ $c->notes }}</td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="text-sm font-weight-bold text-truncate" style="max-width: 150px;">{{ $c->product->name ?? '—' }}</span>
+                                                @php
+                                                    $left = $c->product->stock_quantity ?? null;
+                                                    $threshold = $c->product->low_stock_threshold ?? 0;
+                                                @endphp
+                                                @if($left !== null && $threshold > 0 && $left <= $threshold)
+                                                    <span class="badge bg-warning badge-sm" style="width: fit-content;">Stock bas</span>
+                                                @endif
+                                                <span class="text-xs text-secondary d-lg-none">{{ $c->staff->name ?? '' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-dark">{{ $c->quantity_used }}</span>
+                                        </td>
+                                        <td class="text-center d-none d-md-table-cell">
+                                            <span class="text-xs {{ ($left !== null && $threshold > 0 && $left <= $threshold) ? 'text-warning font-weight-bold' : '' }}">
+                                                {{ $left !== null ? $left : '—' }}
+                                            </span>
+                                        </td>
+                                        <td class="d-none d-lg-table-cell">
+                                            <span class="text-xs text-truncate d-inline-block" style="max-width: 100px;">{{ $c->staff->name ?? '—' }}</span>
+                                        </td>
+                                        <td class="d-none d-xl-table-cell">
+                                            <span class="text-xs text-truncate d-inline-block" style="max-width: 120px;" title="{{ $c->notes }}">{{ $c->notes }}</span>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>

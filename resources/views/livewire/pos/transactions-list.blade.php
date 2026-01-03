@@ -69,33 +69,33 @@
     </div>
 
     <div class="card">
-        <div class="table-responsive">
-            <table class="table align-items-center mb-0">
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table align-items-center mb-0" style="table-layout: fixed; min-width: 900px;">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Date</th>
-                        <th>Type txn</th>
-                        <th>Référence</th>
-                        <th>Article</th>
-                        <th>Type article</th>
-                        <th class="text-end">PU</th>
-                        <th class="text-end">Qté</th>
-                        <th class="text-end">Ligne</th>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 130px;">Date</th>
+                        <th style="width: 100px;">Type txn</th>
+                        <th style="width: 100px;">Référence</th>
+                        <th style="width: 160px;">Article</th>
+                        <th style="width: 80px;">Type</th>
+                        <th style="width: 80px;" class="text-end">PU</th>
+                        <th style="width: 50px;" class="text-end">Qté</th>
+                        <th style="width: 90px;" class="text-end">Ligne</th>
                     </tr>
                 </thead>
                 <tbody>
                 @forelse($items as $it)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
-                        <td>{{ optional($it->transaction)->created_at?->format('d/m/Y H:i') }}</td>
+                        <td class="text-nowrap">{{ optional($it->transaction)->created_at?->format('d/m/Y H:i') }}</td>
                         <td>
                             <span class="badge {{ optional($it->transaction)->type === 'refund' ? 'bg-warning' : 'bg-success' }}">
-                                {{ optional($it->transaction)->type === 'refund' ? 'Remboursement' : 'Vente' }}
+                                {{ optional($it->transaction)->type === 'refund' ? 'Remb.' : 'Vente' }}
                             </span>
                         </td>
-                        <td>{{ optional($it->transaction)->reference ?? '—' }}</td>
-                        <td>
+                        <td class="text-truncate" style="max-width: 100px;" title="{{ optional($it->transaction)->reference }}">{{ optional($it->transaction)->reference ?? '—' }}</td>
+                        <td class="text-truncate" style="max-width: 160px;">
                             @if($it->product_id)
                                 {{ $it->product->name ?? 'Produit #'.$it->product_id }}
                             @elseif($it->service_id)
@@ -109,13 +109,13 @@
                                 {{ $it->product_id ? 'Produit' : 'Service' }}
                             </span>
                         </td>
-                        <td class="text-end">{{ number_format($it->unit_price, 2, ',', ' ') }} €</td>
+                        <td class="text-end text-nowrap">{{ number_format($it->unit_price, 2, ',', ' ') }} €</td>
                         <td class="text-end">{{ $it->quantity }}</td>
-                        <td class="text-end">{{ number_format($it->line_total, 2, ',', ' ') }} €</td>
+                        <td class="text-end text-nowrap">{{ number_format($it->line_total, 2, ',', ' ') }} €</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">Aucune transaction trouvée pour ces critères</td>
+                        <td colspan="9" class="text-center py-4 text-muted">Aucune transaction trouvée pour ces critères</td>
                     </tr>
                 @endforelse
                 </tbody>

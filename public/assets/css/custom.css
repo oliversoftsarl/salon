@@ -1,0 +1,448 @@
+/**
+ * Custom CSS - Salon Management
+ * Styles optimisés pour tableaux responsive et interface tactile POS
+ */
+
+/* ==========================================
+   TABLEAUX RESPONSIVE OPTIMISÉS
+   ========================================== */
+
+/* Wrapper responsive pour tous les tableaux */
+.table-responsive-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
+/* Style de base pour les tableaux */
+.table-responsive-wrapper table {
+    width: 100%;
+    table-layout: auto;
+    min-width: 100%;
+}
+
+/* Colonnes avec contraintes de largeur */
+.table th,
+.table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    vertical-align: middle;
+}
+
+/* Colonnes d'actions - toujours visibles */
+.table th.actions-col,
+.table td.actions-col {
+    position: sticky;
+    right: 0;
+    background: #fff;
+    z-index: 1;
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.table thead th.actions-col {
+    background: #f8f9fa;
+}
+
+/* Badges dans les tableaux */
+.table .badge {
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* Texte tronqué avec tooltip title */
+.text-truncate-cell {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* ==========================================
+   CARDS AVEC TABLEAUX
+   ========================================== */
+
+.card .table-responsive {
+    margin: 0;
+    border-radius: 0;
+}
+
+.card .table {
+    margin-bottom: 0;
+}
+
+.card .table thead th {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: #8898aa;
+    background: transparent;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card .table tbody td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f4f5f7;
+}
+
+.card .table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ==========================================
+   BOUTONS D'ACTIONS COMPACTS
+   ========================================== */
+
+.btn-action-group {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+}
+
+.btn-action-group .btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* ==========================================
+   FORMULAIRES EN LIGNE
+   ========================================== */
+
+.inline-form-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* ==========================================
+   INTERFACE POS TACTILE
+   ========================================== */
+
+/* Conteneur POS */
+.pos-container {
+    height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+/* Boutons tactiles */
+.pos-btn {
+    min-height: 60px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+.pos-btn:active {
+    transform: scale(0.95);
+}
+
+/* Boutons produits */
+.pos-btn-product {
+    background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.pos-btn-product:hover,
+.pos-btn-product:active {
+    background: linear-gradient(145deg, #5a67d8 0%, #6b46c1 100%);
+    color: white;
+}
+
+/* Boutons services */
+.pos-btn-service {
+    background: linear-gradient(145deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border: none;
+}
+
+.pos-btn-service:hover,
+.pos-btn-service:active {
+    background: linear-gradient(145deg, #0f8b81 0%, #2ed872 100%);
+    color: white;
+}
+
+/* Prix sur boutons */
+.pos-btn-price {
+    font-size: 11px;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+/* Boutons quantité */
+.pos-qty-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+/* Affichage quantité */
+.pos-qty-display {
+    min-width: 40px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Items du panier */
+.pos-cart-item {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.pos-cart-item:hover {
+    background: #e9ecef;
+}
+
+/* Bouton suppression */
+.pos-delete-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+/* Affichage total */
+.pos-total-display {
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.pos-total-amount {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+/* Bouton encaisser */
+.pos-checkout-btn {
+    min-height: 70px;
+    font-size: 20px;
+    font-weight: 700;
+    border-radius: 16px;
+    touch-action: manipulation;
+}
+
+/* Boutons paiement */
+.pos-payment-btn {
+    min-height: 56px;
+    border-radius: 12px;
+    font-weight: 600;
+    touch-action: manipulation;
+}
+
+.pos-payment-btn.active {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+}
+
+/* Champs de recherche POS */
+.pos-search-input {
+    height: 50px;
+    font-size: 16px;
+    border-radius: 12px;
+}
+
+/* Scroll zones */
+.pos-catalog-scroll {
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.pos-cart-scroll {
+    max-height: calc(100vh - 450px);
+    overflow-y: auto;
+}
+
+/* Titres sections */
+.pos-section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6c757d;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+/* Select client */
+.pos-client-select {
+    height: 50px;
+    font-size: 15px;
+    border-radius: 12px;
+}
+
+/* Onglets POS */
+.pos-tabs .nav-link {
+    padding: 12px 20px;
+    font-weight: 600;
+    border-radius: 12px 12px 0 0;
+}
+
+/* ==========================================
+   RESPONSIVE MOBILE
+   ========================================== */
+
+@media (max-width: 992px) {
+    .pos-container {
+        height: auto;
+        overflow: visible;
+    }
+
+    .pos-catalog-scroll,
+    .pos-cart-scroll {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Tables empilées sur mobile */
+    .table-mobile-stack {
+        display: block;
+    }
+
+    .table-mobile-stack thead {
+        display: none;
+    }
+
+    .table-mobile-stack tbody,
+    .table-mobile-stack tr,
+    .table-mobile-stack td {
+        display: block;
+        width: 100%;
+    }
+
+    .table-mobile-stack tr {
+        margin-bottom: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        background: #fff;
+    }
+
+    .table-mobile-stack td {
+        padding: 0.5rem;
+        text-align: right;
+        border: none;
+        max-width: 100%;
+    }
+
+    .table-mobile-stack td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: 600;
+        color: #8898aa;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+    }
+
+    .table-mobile-stack td.actions-col {
+        position: relative;
+        right: auto;
+        text-align: center;
+    }
+}
+
+/* ==========================================
+   ALERTES ET NOTIFICATIONS
+   ========================================== */
+
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.alert-success {
+    background: linear-gradient(145deg, #2dce89 0%, #26bf7f 100%);
+    color: white;
+}
+
+.alert-danger {
+    background: linear-gradient(145deg, #f5365c 0%, #f53652 100%);
+    color: white;
+}
+
+.alert-warning {
+    background: linear-gradient(145deg, #fb6340 0%, #f85a30 100%);
+    color: white;
+}
+
+.alert .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+/* ==========================================
+   SCROLLBAR PERSONNALISÉ
+   ========================================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* ==========================================
+   UTILITAIRES
+   ========================================== */
+
+/* Force le texte à ne pas dépasser */
+.text-no-overflow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Flex gap fallback */
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 1rem; }
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+

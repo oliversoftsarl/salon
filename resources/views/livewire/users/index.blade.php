@@ -84,32 +84,47 @@
             <table class="table align-items-center mb-0">
                 <thead>
                 <tr>
-                    <th>Nom</th>
-                    <th>Email</th>
-                    <th>Rôle</th>
-                    <th>Actif</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Utilisateur</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Email</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 80px;">Rôle</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Statut</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 100px;">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 @forelse($users as $u)
                     <tr>
-                        <td>{{ $u->name }}</td>
-                        <td>{{ $u->email }}</td>
-                        <td><span class="badge bg-dark">{{ ucfirst($u->role) }}</span></td>
-                        <td>
-                            <span class="badge {{ $u->active ? 'bg-success' : 'bg-secondary' }}">{{ $u->active ? 'Oui' : 'Non' }}</span>
+                        <td class="ps-3">
+                            <div class="d-flex flex-column">
+                                <span class="text-sm font-weight-bold text-truncate" style="max-width: 180px;" title="{{ $u->name }}">{{ $u->name }}</span>
+                                <span class="text-xs text-secondary d-md-none text-truncate" style="max-width: 180px;" title="{{ $u->email }}">{{ $u->email }}</span>
+                            </div>
                         </td>
-                        <td class="text-end">
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-outline-primary" wire:click="edit({{ $u->id }})">Éditer</button>
-                                <button class="btn btn-sm btn-outline-warning" wire:click="toggleActive({{ $u->id }})">
-                                    {{ $u->active ? 'Désactiver' : 'Activer' }}
+                        <td class="d-none d-md-table-cell">
+                            <span class="text-xs text-truncate d-inline-block" style="max-width: 200px;" title="{{ $u->email }}">{{ $u->email }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ $u->role === 'admin' ? 'danger' : ($u->role === 'cashier' ? 'warning' : 'dark') }}">
+                                {{ ucfirst($u->role) }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ $u->active ? 'success' : 'secondary' }}">
+                                {{ $u->active ? 'Actif' : 'Inactif' }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-3">
+                            <div class="dropdown d-inline-block">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ni ni-settings-gear-65"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary" wire:click="resetPassword({{ $u->id }})">
-                                    Réinitialiser MDP
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" wire:click="delete({{ $u->id }})" onclick="return confirm('Supprimer cet utilisateur ?')">Supprimer</button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li><a class="dropdown-item" href="#" wire:click.prevent="edit({{ $u->id }})"><i class="ni ni-ruler-pencil me-2 text-primary"></i>Éditer</a></li>
+                                    <li><a class="dropdown-item" href="#" wire:click.prevent="toggleActive({{ $u->id }})"><i class="ni ni-button-power me-2 text-warning"></i>{{ $u->active ? 'Désactiver' : 'Activer' }}</a></li>
+                                    <li><a class="dropdown-item" href="#" wire:click.prevent="resetPassword({{ $u->id }})"><i class="ni ni-lock-circle-open me-2 text-info"></i>Réinitialiser MDP</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" wire:click.prevent="delete({{ $u->id }})" onclick="return confirm('Supprimer cet utilisateur ?')"><i class="ni ni-fat-remove me-2"></i>Supprimer</a></li>
+                                </ul>
                             </div>
                         </td>
                     </tr>

@@ -16,25 +16,28 @@
                     <h6 class="mb-0">Semaine du {{ \Carbon\Carbon::parse($weekStart)->startOfWeek()->format('d/m/Y') }}</h6>
                     <div></div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2 p-md-3">
                     <div class="table-responsive">
-                        <table class="table table-bordered align-middle mb-0">
+                        <table class="table table-bordered align-middle mb-0" style="min-width: 600px;">
                             <thead>
                             <tr>
                                 @foreach($days as $day)
-                                    <th class="text-center">{{ $day->isoFormat('ddd DD/MM') }}</th>
+                                    <th class="text-center py-2 {{ $day->isToday() ? 'bg-gradient-primary text-white' : '' }}" style="font-size: 0.75rem;">
+                                        {{ $day->isoFormat('ddd') }}<br>
+                                        <span class="font-weight-bold">{{ $day->format('d') }}</span>
+                                    </th>
                                 @endforeach
                             </tr>
                             </thead>
                             <tbody>
                             <tr>
                                 @foreach($days as $day)
-                                    <td style="min-height: 140px;">
+                                    <td style="min-height: 120px; vertical-align: top; padding: 4px; {{ $day->isToday() ? 'background: rgba(94, 114, 228, 0.05);' : '' }}">
                                         @foreach($appointments->whereBetween('start_at', [$day->copy()->startOfDay(), $day->copy()->endOfDay()]) as $rdv)
-                                            <div class="p-2 mb-2 border border-1 rounded-2">
-                                                <strong>{{ $rdv->service->name ?? '' }}</strong><br>
-                                                {{ \Carbon\Carbon::parse($rdv->start_at)->format('H:i') }} - {{ \Carbon\Carbon::parse($rdv->end_at)->format('H:i') }}<br>
-                                                <small class="text-secondary">{{ $rdv->client->name ?? '' }} — {{ $rdv->staff->name ?? '' }}</small>
+                                            <div class="p-1 mb-1 border-start border-3 border-primary bg-light rounded-1" style="font-size: 0.75rem;">
+                                                <strong class="d-block text-truncate" style="max-width: 90px;" title="{{ $rdv->service->name ?? '' }}">{{ $rdv->service->name ?? '' }}</strong>
+                                                <span class="text-xs text-primary">{{ \Carbon\Carbon::parse($rdv->start_at)->format('H:i') }}</span>
+                                                <small class="text-secondary d-block text-truncate" style="max-width: 90px;" title="{{ $rdv->client->name ?? '' }}">{{ $rdv->client->name ?? '' }}</small>
                                             </div>
                                         @endforeach
                                     </td>

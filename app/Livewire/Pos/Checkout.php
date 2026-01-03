@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 use Illuminate\Validation\Rule;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class Checkout extends Component
 {
@@ -24,7 +23,9 @@ class Checkout extends Component
     public string $payment_method = 'cash';
     public ?int $client_id = null;
 
-     public $transactionData = [];
+    // Dernière transaction pour le reçu
+    public ?int $lastTransactionId = null;
+    public bool $showReceipt = false;
 
     // Création rapide de client
     public bool $showNewClient = false;
@@ -35,8 +36,6 @@ class Checkout extends Component
     public ?string $newClient_gender = null;
     public ?string $newClient_notes = null;
     public ?int $newClient_loyalty_point = 0;
-
- 
 
     public function render()
     {
@@ -241,104 +240,127 @@ class Checkout extends Component
 
         return $data;
     }
-   public  $transaction = null; // Déclarer la variable à l'extérieur
-public function checkout(): void
-{
-    if (empty($this->cart)) {
-        $this->addError('cart', 'Le panier est vide.');
-        return;
-    }
 
-    $this->validate([
-        'client_id' => ['nullable', 'exists:clients,id'],
-    ]);
+    public function checkout(): void
+    {
+        if (empty($this->cart)) {
+            $this->addError('cart', 'Le panier est vide.');
+            return;
+        }
 
-    // Pré-contrôle: tous les produits du panier doivent avoir un stock suffisant
-    $productNeeds = [];
-    foreach ($this->cart as $item) {
-        if (($item['type'] ?? null) === 'product') {
-            $productNeeds[$item['id']] = ($productNeeds[$item['id']] ?? 0) + (int)$item['qty'];
-        }
-    }
-    if (!empty($productNeeds)) {
-        $products = Product::whereIn('id', array_keys($productNeeds))->get()->keyBy('id');
-        foreach ($productNeeds as $pid => $needed) {
-            $available = (int)($products[$pid]->stock_quantity ?? 0);
-            if ($needed > $available) {
-                $this->addError('cart', 'Stock insuffisant pour le produit "'.($products[$pid]->name ?? ('#'.$pid)).'". Disponible: '.$available.', demandé: '.$needed);
-                return;
-            }
-        }
-    }    
-    DB::transaction(function () use (&$transaction) {
-        $tx = Transaction::create([
-            'reference'      => null,
-            'type'           => 'sale',
-            'total'          => $this->total,
-            'payment_method' => $this->payment_method,
-            'client_id'      => $this->client_id,
-            // 'cashier_id'   => auth()->id(),
+        $this->validate([
+            'client_id' => ['nullable', 'exists:clients,id'],
         ]);
 
+        // Pré-contrôle: tous les produits du panier doivent avoir un stock suffisant
+        $productNeeds = [];
         foreach ($this->cart as $item) {
-            $unit = (float)$item['price'];
-            $qty  = (int)$item['qty'];
-            $line = $unit * $qty;
+            if (($item['type'] ?? null) === 'product') {
+                $productNeeds[$item['id']] = ($productNeeds[$item['id']] ?? 0) + (int)$item['qty'];
+            }
+        }
+        if (!empty($productNeeds)) {
+            $products = Product::whereIn('id', array_keys($productNeeds))->get()->keyBy('id');
+            foreach ($productNeeds as $pid => $needed) {
+                $available = (int)($products[$pid]->stock_quantity ?? 0);
+                if ($needed > $available) {
+                    $this->addError('cart', 'Stock insuffisant pour le produit "'.($products[$pid]->name ?? ('#'.$pid)).'". Disponible: '.$available.', demandé: '.$needed);
+                    return;
+                }
+            }
+        }
 
-            TransactionItem::create([
-                'transaction_id' => $tx->id,
-                'product_id'     => $item['type'] === 'product' ? $item['id'] : null,
-                'service_id'     => $item['type'] === 'service' ? $item['id'] : null,
-                'stylist_id'     => $item['type'] === 'service'
-                    ? ($item['stylist_id'] ?? null)
-                    : null,
-                'quantity'       => $qty,
-                'unit_price'     => $unit,
-                'line_total'     => $line,
+        $transactionId = null;
+
+        DB::transaction(function () use (&$transactionId) {
+            $tx = Transaction::create([
+                'reference'      => 'TX-' . now()->format('YmdHis') . '-' . rand(100, 999),
+                'type'           => 'sale',
+                'total'          => $this->total,
+                'payment_method' => $this->payment_method,
+                'client_id'      => $this->client_id,
+                // 'cashier_id'   => auth()->id(),
             ]);
 
-            if ($item['type'] === 'product') {
-                $p = Product::lockForUpdate()->findOrFail($item['id']);
-                $available = (int)$p->stock_quantity;
+            $transactionId = $tx->id;
 
-                // Re-vérifie au niveau DB pour éviter les races
-                if ($qty > $available) {
-                    throw new \RuntimeException('Stock insuffisant pour '.$p->name.'.');
-                }
+            foreach ($this->cart as $item) {
+                $unit = (float)$item['price'];
+                $qty  = (int)$item['qty'];
+                $line = $unit * $qty;
 
-                $p->decrement('stock_quantity', $qty);
-
-                StockMovement::create([
-                    'product_id'   => $p->id,
-                    'qty_change'   => -$qty,
-                    'reason'       => 'Vente',
-                    'reference_id' => $tx->id,
+                TransactionItem::create([
+                    'transaction_id' => $tx->id,
+                    'product_id'     => $item['type'] === 'product' ? $item['id'] : null,
+                    'service_id'     => $item['type'] === 'service' ? $item['id'] : null,
+                    'stylist_id'     => $item['type'] === 'service'
+                        ? ($item['stylist_id'] ?? null)
+                        : null,
+                    'quantity'       => $qty,
+                    'unit_price'     => $unit,
+                    'line_total'     => $line,
                 ]);
-            }
-        } 
-        $this->transaction = $tx; // Assigner la transaction 
-    });
-    // On appelle la fonction d'impression du reçu
-    $this->printReceipt($this->transaction);
-    $this->cart = [];
-    $this->payment_method = 'cash';
-    $this->client_id = null;
-    session()->flash('success', 'Vente enregistrée.');
-}
 
-protected function printReceipt(Transaction $transaction): void
-    {
-       // Stocker l'ID de la transaction pour le téléchargement
-    $this->transactionData = ['id' => $transaction->id];
-    
-    // Déclencher le téléchargement du PDF via JavaScript
-    $this->dispatch('download-receipt');
+                if ($item['type'] === 'product') {
+                    $p = Product::lockForUpdate()->findOrFail($item['id']);
+                    $available = (int)$p->stock_quantity;
+
+                    // Re-vérifie au niveau DB pour éviter les races
+                    if ($qty > $available) {
+                        throw new \RuntimeException('Stock insuffisant pour '.$p->name.'.');
+                    }
+
+                    $p->decrement('stock_quantity', $qty);
+
+                    StockMovement::create([
+                        'product_id'   => $p->id,
+                        'qty_change'   => -$qty,
+                        'reason'       => 'Vente',
+                        'reference_id' => $tx->id,
+                    ]);
+                }
+            }
+        });
+
+        // Stocker l'ID de la transaction pour le reçu
+        $this->lastTransactionId = $transactionId;
+        $this->showReceipt = true;
+
+        $this->cart = [];
+        $this->payment_method = 'cash';
+        $this->client_id = null;
+
+        // Dispatcher un événement pour déclencher l'impression
+        $this->dispatch('transaction-completed', transactionId: $transactionId);
+
+        session()->flash('success', 'Vente enregistrée.');
     }
-private function addToCart(string $type, int $id, string $name, float $price, int $qty): void
-{
-    foreach ($this->cart as $i => $it) {
-        if ($it['type'] === $type && $it['id'] === $id) {
-            $this->cart[$i]['qty'] += $qty;
+
+    public function closeReceipt(): void
+    {
+        $this->showReceipt = false;
+        $this->lastTransactionId = null;
+    }
+
+    public function printReceipt(): void
+    {
+        $this->dispatch('print-receipt');
+    }
+
+    public function getLastTransactionProperty(): ?Transaction
+    {
+        if (!$this->lastTransactionId) {
+            return null;
+        }
+        return Transaction::with(['items.product', 'items.service', 'client'])->find($this->lastTransactionId);
+    }
+
+
+    private function addToCart(string $type, int $id, string $name, float $price, int $qty): void
+    {
+        foreach ($this->cart as $i => $it) {
+            if ($it['type'] === $type && $it['id'] === $id) {
+                $this->cart[$i]['qty'] += $qty;
                 return;
             }
         }

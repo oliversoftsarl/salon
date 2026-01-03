@@ -106,23 +106,38 @@
                         <table class="table align-items-center mb-0">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Produit</th>
-                                    <th class="text-end">Quantité</th>
-                                    <th>Fournisseur</th>
-                                    <th class="text-end">Coût U.</th>
-                                    <th>Notes</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3" style="width: 90px;">Date</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Produit</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 60px;">Qté</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Fournisseur</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end d-none d-lg-table-cell" style="width: 80px;">Coût U.</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-xl-table-cell">Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($supplies as $s)
                                     <tr>
-                                        <td>{{ $s->received_at?->format('d/m/Y') }}</td>
-                                        <td>{{ $s->product->name ?? '—' }}</td>
-                                        <td class="text-end"><span class="badge bg-success">{{ $s->quantity_received }}</span></td>
-                                        <td>{{ $s->supplier ?? '—' }}</td>
-                                        <td class="text-end">{{ $s->unit_cost !== null ? number_format($s->unit_cost, 2, ',', ' ') . ' €' : '—' }}</td>
-                                        <td class="text-truncate" style="max-width:240px">{{ $s->notes }}</td>
+                                        <td class="ps-3">
+                                            <span class="text-xs">{{ $s->received_at?->format('d/m/Y') }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="text-sm font-weight-bold text-truncate" style="max-width: 150px;" title="{{ $s->product->name ?? '' }}">{{ $s->product->name ?? '—' }}</span>
+                                                <span class="text-xs text-secondary d-md-none">{{ $s->supplier ?? '' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">{{ $s->quantity_received }}</span>
+                                        </td>
+                                        <td class="d-none d-md-table-cell">
+                                            <span class="text-xs text-truncate d-inline-block" style="max-width: 120px;" title="{{ $s->supplier }}">{{ $s->supplier ?? '—' }}</span>
+                                        </td>
+                                        <td class="text-end d-none d-lg-table-cell">
+                                            <span class="text-xs">{{ $s->unit_cost !== null ? number_format($s->unit_cost, 2, ',', ' ') . ' €' : '—' }}</span>
+                                        </td>
+                                        <td class="d-none d-xl-table-cell">
+                                            <span class="text-xs text-truncate d-inline-block" style="max-width: 100px;" title="{{ $s->notes }}">{{ $s->notes }}</span>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="6" class="text-center py-4 text-muted">Aucun approvisionnement</td></tr>

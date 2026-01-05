@@ -3,6 +3,7 @@
 namespace App\Livewire\Pos;
 
 use App\Models\TransactionItem;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
@@ -17,6 +18,7 @@ class TransactionsList extends Component
     public ?string $date_from = null;
     public ?string $date_to = null;
     public string $search = '';
+    public ?int $stylist_id = null;     // Filtre par prestataire
 
     protected $queryString = [
         'filter_type' => ['except' => 'all'],
@@ -24,6 +26,7 @@ class TransactionsList extends Component
         'date_from'   => ['except' => null],
         'date_to'     => ['except' => null],
         'search'      => ['except' => ''],
+        'stylist_id'  => ['except' => null],
         'page'        => ['except' => 1],
     ];
 
@@ -35,9 +38,17 @@ class TransactionsList extends Component
 
     public function updating($name, $value): void
     {
-        if (in_array($name, ['filter_type','tx_type','date_from','date_to','search'], true)) {
+        if (in_array($name, ['filter_type','tx_type','date_from','date_to','search','stylist_id'], true)) {
             $this->resetPage();
         }
+    }
+
+    public function getStaffListProperty()
+    {
+        return User::whereIn('role', ['staff', 'admin'])
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     public function render()
@@ -45,7 +56,7 @@ class TransactionsList extends Component
         $query = $this->buildQuery()->orderByDesc('id');
 
         $items = $query
-            ->with(['transaction', 'product:id,name', 'service:id,name'])
+            ->with(['transaction', 'product:id,name', 'service:id,name', 'stylist:id,name'])
             ->paginate(12);
 
         $pageTotal  = $items->getCollection()->sum('line_total');
@@ -133,6 +144,8 @@ class TransactionsList extends Component
             // Type d'article
             ->when($this->filter_type === 'products', fn($q) => $q->whereNotNull('product_id'))
             ->when($this->filter_type === 'services', fn($q) => $q->whereNotNull('service_id'))
+            // Filtre par prestataire
+            ->when($this->stylist_id, fn($q) => $q->where('stylist_id', $this->stylist_id))
             // Recherche
             ->when(trim($this->search) !== '', function ($q) {
                 $term = "%{$this->search}%";

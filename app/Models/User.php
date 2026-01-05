@@ -89,6 +89,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Profil staff associé
+     */
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    /**
+     * Prestations effectuées par ce prestataire
+     */
+    public function prestations()
+    {
+        return $this->hasMany(TransactionItem::class, 'stylist_id')
+            ->whereNotNull('service_id');
+    }
+
+    /**
      * Vérifie si l'utilisateur peut accéder à une fonctionnalité
      */
     public function canAccess(string $feature): bool

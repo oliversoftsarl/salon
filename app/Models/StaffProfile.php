@@ -18,4 +18,12 @@ class StaffProfile extends Model
         'hourly_rate' => 'decimal:2',
         'availability' => 'array', // cast JSON en array PHP
     ];
+
+    /**
+     * Utilisateur associé au profil
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

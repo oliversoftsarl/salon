@@ -103,11 +103,21 @@
 
       {{-- Staff --}}
       <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('staff.*') ? 'active' : '' }}" href="{{ route('staff.schedule') }}">
+        <a class="nav-link {{ request()->routeIs('staff.schedule') ? 'active' : '' }}" href="{{ route('staff.schedule') }}">
           <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
             <i class="ni ni-single-02 text-dark text-sm opacity-10"></i>
           </div>
           <span class="nav-link-text ms-1">Staff</span>
+        </a>
+      </li>
+
+      {{-- Performance Prestataires --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('staff.performance') ? 'active' : '' }}" href="{{ route('staff.performance') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-chart-bar-32 text-primary text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Performance Prestataires</span>
         </a>
       </li>
 

@@ -36,6 +36,7 @@ class Checkout extends Component
     public ?string $newClient_gender = null;
     public ?string $newClient_notes = null;
     public ?int $newClient_loyalty_point = 0;
+    public bool $newClient_publish_consent = false;
 
     public function render()
     {
@@ -130,6 +131,7 @@ class Checkout extends Component
             'newClient_gender' => ['nullable', 'string', 'max:16'],
             'newClient_loyalty_point' => ['nullable', 'integer', 'min:0'],
             'newClient_notes' => ['nullable', 'string'],
+            'newClient_publish_consent' => ['boolean'],
         ]);
 
         $cols = Schema::getColumnListing((new Client)->getTable());
@@ -171,6 +173,9 @@ class Checkout extends Component
         if (in_array('notes', $cols, true)) {
             $data['notes'] = $this->newClient_notes ?: null;
         }
+        if (in_array('publish_consent', $cols, true)) {
+            $data['publish_consent'] = $this->newClient_publish_consent;
+        }
 
         $client = Client::create($data);
 
@@ -185,6 +190,7 @@ class Checkout extends Component
         $this->newClient_gender = null;
         $this->newClient_notes = null;
         $this->newClient_loyalty_point = 0;
+        $this->newClient_publish_consent = false;
 
         session()->flash('success', 'Client créé et sélectionné.');
     }

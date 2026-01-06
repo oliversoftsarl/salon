@@ -69,6 +69,17 @@
                                 @error('notes') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
 
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="publish_consent" wire:model="publish_consent">
+                                    <label class="form-check-label" for="publish_consent">
+                                        <i class="ni ni-world me-1"></i>
+                                        <strong>Consentement publication</strong> — Le client accepte d'apparaître sur notre site web
+                                    </label>
+                                </div>
+                                @error('publish_consent') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+
                             <div class="col-12 d-flex gap-2">
                                 <button class="btn btn-success" wire:click="save"><i class="ni ni-check-bold me-1"></i> Enregistrer</button>
                                 <button class="btn btn-outline-secondary" wire:click="$set('editingId', null)">Annuler</button>
@@ -86,6 +97,7 @@
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Contact</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Infos</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Points</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 80px;">Publication</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 100px;">Actions</th>
                         </tr>
                         </thead>
@@ -125,6 +137,17 @@
                                 <td class="text-center">
                                     <span class="badge bg-gradient-info">{{ (int)($c->loyalty_point ?? 0) }}</span>
                                 </td>
+                                <td class="text-center">
+                                    @if($c->publish_consent)
+                                        <span class="badge bg-success" title="Le client accepte d'être publié sur le site">
+                                            <i class="ni ni-check-bold me-1"></i>Oui
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary" title="Le client n'a pas donné son consentement">
+                                            <i class="ni ni-fat-remove me-1"></i>Non
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="text-end pe-3">
                                     <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="edit({{ $c->id }})" title="Modifier">
                                         <i class="ni ni-ruler-pencil"></i>
@@ -135,7 +158,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center py-4 text-muted">Aucun client</td></tr>
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Aucun client</td></tr>
                         @endforelse
                         </tbody>
                     </table>

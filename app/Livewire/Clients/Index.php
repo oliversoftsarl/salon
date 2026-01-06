@@ -23,6 +23,7 @@ class Index extends Component
     public ?string $birthdate = null;
     public ?string $gender = null;
     public ?int $loyalty_point = 0;
+    public bool $publish_consent = false;
 
     protected function rules(): array
     {
@@ -34,6 +35,7 @@ class Index extends Component
             'gender' => ['nullable', 'string', 'max:16'],
             'loyalty_point' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'publish_consent' => ['boolean'],
         ];
     }
 
@@ -87,6 +89,7 @@ class Index extends Component
         $this->birthdate = $c->birthdate?->toDateString() ?? null;
         $this->gender = $c->gender ?? null;
         $this->loyalty_point = (int)($c->loyalty_point ?? 0);
+        $this->publish_consent = (bool)($c->publish_consent ?? false);
     }
 
     public function save(): void
@@ -156,6 +159,10 @@ class Index extends Component
             $payload['notes'] = $this->notes ?: null;
         }
 
+        if ($this->hasColumn('publish_consent')) {
+            $payload['publish_consent'] = $this->publish_consent;
+        }
+
         return $payload;
     }
 
@@ -168,6 +175,7 @@ class Index extends Component
         $this->birthdate = null;
         $this->gender = null;
         $this->loyalty_point = 0;
+        $this->publish_consent = false;
     }
 
     private function hasColumn(string $col): bool

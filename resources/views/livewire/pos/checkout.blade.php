@@ -433,6 +433,16 @@
                                 <label class="form-label">Notes</label>
                                 <textarea class="form-control" rows="2" wire:model.defer="newClient_notes" placeholder="Notes sur le client..."></textarea>
                             </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="newClient_publish_consent" wire:model.defer="newClient_publish_consent">
+                                    <label class="form-check-label" for="newClient_publish_consent">
+                                        <i class="ni ni-world me-1 text-primary"></i>
+                                        <strong>Consentement publication</strong>
+                                        <span class="text-muted d-block text-xs">Le client accepte d'apparaître sur notre site web</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">

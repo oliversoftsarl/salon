@@ -141,6 +141,16 @@
         </a>
       </li>
 
+      {{-- Fiche de Stock --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('inventory.stock-sheet') ? 'active' : '' }}" href="{{ route('inventory.stock-sheet') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-single-copy-04 text-info text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Fiche de Stock</span>
+        </a>
+      </li>
+
       {{-- Utilisateurs --}}
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">

@@ -2,8 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Inventory\Supplies as InventorySupplies;
-
 use App\Livewire\Inventory\Consumptions as InventoryConsumptions;
+use App\Livewire\Inventory\StockSheet as InventoryStockSheet;
 
 use App\Livewire\Services\Index as ServicesIndex;
 use App\Livewire\Products\Index as ProductsIndex;
@@ -16,6 +16,7 @@ use App\Livewire\Users\Index as UsersIndex;
 use App\Livewire\Pos\TransactionsList as PosTransactionsList;
 
 use App\Models\Transaction;
+use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
@@ -89,6 +90,47 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/inventory/supplies', InventorySupplies::class)
         ->middleware('role:admin,staff')
         ->name('inventory.supplies');
+
+    Route::get('/inventory/stock-sheet', InventoryStockSheet::class)
+        ->middleware('role:admin')
+        ->name('inventory.stock-sheet');
+
+    Route::get('/inventory/stock-sheet/pdf', function () {
+        $productId = request('product');
+        $dateFrom = request('from');
+        $dateTo = request('to');
+
+        if (!$productId) {
+            return redirect()->route('inventory.stock-sheet');
+        }
+
+        $product = Product::findOrFail($productId);
+
+        // Calculer les données pour le PDF
+        $stockSheet = new \App\Livewire\Inventory\StockSheet();
+        $stockSheet->product_id = $productId;
+        $stockSheet->date_from = $dateFrom;
+        $stockSheet->date_to = $dateTo;
+        $stockSheet->loadStockSheet();
+
+        $pdf = Pdf::loadView('pdf.stock-sheet', [
+            'product' => $product,
+            'movements' => $stockSheet->movements,
+            'summary' => $stockSheet->summary,
+            'initialStock' => $stockSheet->initialStock,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'company' => [
+                'name' => 'Salon de Coiffure Gobel',
+                'address' => 'Q. Office 1 Kanisa la mungu',
+                'city' => 'NK Goma',
+                'phone' => '243 990 378 202',
+            ]
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+        return $pdf->download('fiche-stock-' . $product->sku . '-' . $dateFrom . '-' . $dateTo . '.pdf');
+    })->middleware('role:admin')->name('inventory.stock-sheet.pdf');
 
 
     Route::get('/download-receipt/{transaction}', function ($transactionId) {

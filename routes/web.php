@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\Inventory\Supplies as InventorySupplies;
 use App\Livewire\Inventory\Consumptions as InventoryConsumptions;
 use App\Livewire\Inventory\StockSheet as InventoryStockSheet;
+use App\Livewire\Cash\Register as CashRegister;
 
 use App\Livewire\Services\Index as ServicesIndex;
 use App\Livewire\Products\Index as ProductsIndex;
@@ -78,6 +79,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/pos/transactions', PosTransactionsList::class)
         ->middleware('role:admin,cashier')
         ->name('pos.transactions');
+
+    Route::get('/cash', CashRegister::class)
+        ->middleware('role:admin')
+        ->name('cash.register');
 
     Route::get('/users', UsersIndex::class)
         ->middleware('role:admin')

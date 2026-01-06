@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\StockMovement;
+use App\Models\CashMovement;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -326,6 +327,19 @@ class Checkout extends Component
                     ]);
                 }
             }
+
+            // Créer l'entrée de caisse automatiquement
+            CashMovement::create([
+                'date' => now()->toDateString(),
+                'type' => 'entry',
+                'category' => 'sale',
+                'amount' => $tx->total,
+                'description' => 'Vente ' . $tx->reference,
+                'reference' => $tx->reference,
+                'payment_method' => $this->payment_method,
+                'transaction_id' => $tx->id,
+                'created_by' => auth()->id(),
+            ]);
         });
 
         // Stocker l'ID de la transaction pour le reçu

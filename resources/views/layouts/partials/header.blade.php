@@ -48,6 +48,18 @@
       </li>
       @endif
 
+      {{-- Gestion de Caisse - Admin seulement --}}
+      @if(auth()->user()?->role === 'admin')
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('cash.register') ? 'active' : '' }}" href="{{ route('cash.register') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-money-coins text-warning text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Gestion Caisse</span>
+        </a>
+      </li>
+      @endif
+
       {{-- Section Gestion - Pas pour les caissiers --}}
       @if(auth()->user()?->role !== 'cashier')
       <li class="nav-item mt-3">

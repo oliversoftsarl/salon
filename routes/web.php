@@ -21,6 +21,8 @@ use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
+use App\Livewire\Dashboard;
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -32,16 +34,10 @@ Route::middleware([
         if ($user && $user->role === 'cashier') {
             return redirect()->route('pos.checkout');
         }
-        return view('pages.dashboard');
+        return redirect()->route('dashboard');
     });
 
-    Route::get('/dashboard', function () {
-        $user = auth()->user();
-        if ($user && $user->role === 'cashier') {
-            return redirect()->route('pos.checkout');
-        }
-        return view('pages.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
     Route::get('/user/profile', function () {
         return view('profile.show');

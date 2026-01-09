@@ -36,7 +36,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Ventes Aujourd'hui</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    {{ number_format($generalStats['today_sales'], 2, ',', ' ') }} €
+                                    {{ number_format($generalStats['today_sales'], 0, ',', ' ') }} FC
                                 </h5>
                                 <small class="text-muted">{{ $generalStats['today_transactions'] }} transaction(s)</small>
                             </div>
@@ -58,7 +58,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Revenus (période)</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    {{ number_format($revenueStats['current_total'], 2, ',', ' ') }} €
+                                    {{ number_format($revenueStats['current_total'], 0, ',', ' ') }} FC
                                 </h5>
                                 <small class="{{ $revenueStats['percent_change'] >= 0 ? 'text-success' : 'text-danger' }}">
                                     <i class="ni ni-{{ $revenueStats['percent_change'] >= 0 ? 'bold-up' : 'bold-down' }}"></i>
@@ -105,7 +105,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Solde Caisse</p>
                                 <h5 class="font-weight-bolder mb-0 {{ $cashBalance >= 0 ? 'text-success' : 'text-danger' }}">
-                                    {{ number_format($cashBalance, 2, ',', ' ') }} €
+                                    {{ number_format($cashBalance, 0, ',', ' ') }} FC
                                 </h5>
                                 <small class="text-muted">Total en caisse</small>
                             </div>
@@ -131,7 +131,7 @@
                         <div>
                             <h6 class="mb-0"><i class="ni ni-chart-bar-32 me-2 text-primary"></i>Évolution des Revenus</h6>
                             <p class="text-sm text-secondary mb-0">
-                                Panier moyen: <strong>{{ number_format($revenueStats['average_ticket'], 2, ',', ' ') }} €</strong>
+                                Panier moyen: <strong>{{ number_format($revenueStats['average_ticket'], 0, ',', ' ') }} FC</strong>
                             </p>
                         </div>
                         <span class="badge bg-gradient-primary">{{ $revenueStats['transactions_count'] }} ventes</span>
@@ -280,7 +280,7 @@
                                             <span class="text-xs text-secondary">{{ $tx->created_at->format('d/m/Y H:i') }}</span>
                                         </td>
                                         <td class="text-end pe-3">
-                                            <span class="badge bg-success">{{ number_format($tx->total, 2, ',', ' ') }} €</span>
+                                            <span class="badge bg-success">{{ number_format($tx->total, 0, ',', ' ') }} FC</span>
                                         </td>
                                     </tr>
                                 @empty

@@ -90,7 +90,12 @@
                                         <span class="text-xs text-secondary">{{ $p->sku }}</span>
                                     </td>
                                     <td class="text-end">
-                                        <span class="text-sm font-weight-bold">{{ number_format($p->price, 2, ',', ' ') }} €</span>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-sm font-weight-bold">{{ number_format($p->price, 0, ',', ' ') }} FC</span>
+                                            @if($currentExchangeRate)
+                                                <small class="text-muted">≈ $ {{ number_format($p->price / $currentExchangeRate->rate, 2, ',', ' ') }}</small>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge bg-{{ $p->stock_quantity <= 5 ? 'danger' : ($p->stock_quantity <= 10 ? 'warning' : 'success') }}">

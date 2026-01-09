@@ -99,7 +99,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Solde Initial</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    {{ number_format($stats['initial_balance'], 2, ',', ' ') }} €
+                                    {{ number_format($stats['initial_balance'], 0, ',', ' ') }} FC
                                 </h5>
                                 <small class="text-muted">Avant le {{ \Carbon\Carbon::parse($date_from)->format('d/m/Y') }}</small>
                             </div>
@@ -121,7 +121,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold text-success">Total Entrées</p>
                                 <h5 class="font-weight-bolder mb-0 text-success">
-                                    +{{ number_format($stats['total_entries'], 2, ',', ' ') }} €
+                                    +{{ number_format($stats['total_entries'], 0, ',', ' ') }} FC
                                 </h5>
                             </div>
                         </div>
@@ -142,7 +142,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold text-danger">Total Sorties</p>
                                 <h5 class="font-weight-bolder mb-0 text-danger">
-                                    -{{ number_format($stats['total_exits'], 2, ',', ' ') }} €
+                                    -{{ number_format($stats['total_exits'], 0, ',', ' ') }} FC
                                 </h5>
                             </div>
                         </div>
@@ -163,7 +163,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold text-white">Solde Final</p>
                                 <h5 class="font-weight-bolder mb-0 text-white">
-                                    {{ number_format($stats['final_balance'], 2, ',', ' ') }} €
+                                    {{ number_format($stats['final_balance'], 0, ',', ' ') }} FC
                                 </h5>
                                 <small class="text-white opacity-8">En caisse</small>
                             </div>
@@ -191,7 +191,7 @@
                         @foreach($stats['entries_by_category'] as $cat => $total)
                             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                                 <span class="text-sm">{{ $categoryLabels[$cat] ?? $cat }}</span>
-                                <span class="badge bg-success">{{ number_format($total, 2, ',', ' ') }} €</span>
+                                <span class="badge bg-success">{{ number_format($total, 0, ',', ' ') }} FC</span>
                             </div>
                         @endforeach
                     @else
@@ -210,7 +210,7 @@
                         @foreach($stats['exits_by_category'] as $cat => $total)
                             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                                 <span class="text-sm">{{ $categoryLabels[$cat] ?? $cat }}</span>
-                                <span class="badge bg-danger">{{ number_format($total, 2, ',', ' ') }} €</span>
+                                <span class="badge bg-danger">{{ number_format($total, 0, ',', ' ') }} FC</span>
                             </div>
                         @endforeach
                     @else
@@ -268,7 +268,7 @@
                                 </td>
                                 <td class="text-end">
                                     <span class="text-sm font-weight-bold {{ $mvt->type === 'entry' ? 'text-success' : 'text-danger' }}">
-                                        {{ $mvt->type === 'entry' ? '+' : '-' }}{{ number_format($mvt->amount, 2, ',', ' ') }} €
+                                        {{ $mvt->type === 'entry' ? '+' : '-' }}{{ number_format($mvt->amount, 0, ',', ' ') }} FC
                                     </span>
                                 </td>
                                 <td class="text-end pe-3">

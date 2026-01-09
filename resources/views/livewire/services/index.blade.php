@@ -95,7 +95,12 @@
                                     <span class="badge bg-secondary">{{ $service->duration_minutes }} min</span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="text-sm font-weight-bold">{{ number_format($service->price, 2, ',', ' ') }} €</span>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-sm font-weight-bold">{{ number_format($service->price, 0, ',', ' ') }} FC</span>
+                                        @if($currentExchangeRate)
+                                            <small class="text-muted">≈ $ {{ number_format($service->price / $currentExchangeRate->rate, 2, ',', ' ') }}</small>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
                                     <span class="text-xs">{{ ucfirst($service->service_type) }}</span>

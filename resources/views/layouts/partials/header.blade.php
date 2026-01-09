@@ -172,6 +172,16 @@
           <span class="nav-link-text ms-1">Utilisateurs</span>
         </a>
       </li>
+
+      {{-- Taux de Change --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.exchange-rates') ? 'active' : '' }}" href="{{ route('settings.exchange-rates') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-money-coins text-success text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Taux de Change</span>
+        </a>
+      </li>
       @endif
 
       {{-- Section Inventaire pour staff --}}

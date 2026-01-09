@@ -64,10 +64,10 @@
         </div>
         <div class="card-footer d-flex flex-wrap gap-3 justify-content-between align-items-center">
             <div class="text-sm text-secondary">
-                Total (page): <strong class="text-dark">{{ number_format($pageTotal, 2, ',', ' ') }} €</strong>
+                Total (page): <strong class="text-dark">{{ number_format($pageTotal, 0, ',', ' ') }} FC</strong>
             </div>
             <div class="text-sm text-secondary">
-                Total (filtre global): <strong class="text-success">{{ number_format($grandTotal, 2, ',', ' ') }} €</strong>
+                Total (filtre global): <strong class="text-success">{{ number_format($grandTotal, 0, ',', ' ') }} FC</strong>
             </div>
             <div>
                 <a href="{{ route('pos.checkout') }}" class="btn btn-primary btn-sm">
@@ -135,13 +135,13 @@
                             </span>
                         </td>
                         <td class="text-end d-none d-lg-table-cell">
-                            <span class="text-xs">{{ number_format($it->unit_price, 2, ',', ' ') }} €</span>
+                            <span class="text-xs">{{ number_format($it->unit_price, 0, ',', ' ') }} FC</span>
                         </td>
                         <td class="text-center">
                             <span class="badge bg-secondary">{{ $it->quantity }}</span>
                         </td>
                         <td class="text-end pe-3">
-                            <span class="text-sm font-weight-bold">{{ number_format($it->line_total, 2, ',', ' ') }} €</span>
+                            <span class="text-sm font-weight-bold">{{ number_format($it->line_total, 0, ',', ' ') }} FC</span>
                         </td>
                     </tr>
                 @empty

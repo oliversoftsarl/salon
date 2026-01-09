@@ -192,7 +192,7 @@
                                         <div class="col-6">
                                             <button class="btn pos-btn pos-btn-service w-100" wire:click="addService({{ $s->id }})">
                                                 <span class="text-truncate w-100">{{ $s->name }}</span>
-                                                <span class="pos-btn-price">{{ number_format($s->price, 2, ',', ' ') }} €</span>
+                                                <span class="pos-btn-price">{{ number_format($s->price, 0, ',', ' ') }} FC</span>
                                             </button>
                                         </div>
                                     @empty
@@ -218,7 +218,7 @@
                                         <div class="col-6">
                                             <button class="btn pos-btn pos-btn-product w-100" wire:click="addProduct({{ $p->id }})">
                                                 <span class="text-truncate w-100">{{ $p->name }}</span>
-                                                <span class="pos-btn-price">{{ number_format($p->price, 2, ',', ' ') }} €</span>
+                                                <span class="pos-btn-price">{{ number_format($p->price, 0, ',', ' ') }} FC</span>
                                             </button>
                                         </div>
                                     @empty
@@ -267,8 +267,8 @@
                                                     </strong>
                                                 </div>
                                                 <div class="text-sm text-muted">
-                                                    {{ number_format($it['price'], 2, ',', ' ') }} € × {{ $it['qty'] }} =
-                                                    <strong class="text-dark">{{ number_format($it['price'] * $it['qty'], 2, ',', ' ') }} €</strong>
+                                                    {{ number_format($it['price'], 0, ',', ' ') }} FC × {{ $it['qty'] }} =
+                                                    <strong class="text-dark">{{ number_format($it['price'] * $it['qty'], 0, ',', ' ') }} FC</strong>
                                                 </div>
                                                 @if(($it['type'] ?? '') === 'service')
                                                     <select class="form-select form-select-sm mt-2" style="max-width: 180px;"
@@ -367,7 +367,14 @@
                             <div class="pos-total-display mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="text-uppercase" style="opacity: 0.7;">Total à payer</span>
-                                    <span class="pos-total-amount">{{ number_format($this->total, 2, ',', ' ') }} €</span>
+                                    <div class="text-end">
+                                        <span class="pos-total-amount">{{ number_format($this->total, 0, ',', ' ') }} FC</span>
+                                        @if($currentExchangeRate)
+                                            <div class="text-sm" style="opacity: 0.7;">
+                                                ≈ $ {{ number_format($this->total / $currentExchangeRate->rate, 2, ',', ' ') }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 

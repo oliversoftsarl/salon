@@ -330,6 +330,10 @@ function initCharts() {
     // Données pour les graphiques
     const revenueData = @json($dailyRevenueChart);
     const clientData = @json($clientFrequencyChart);
+    const exchangeRate = {{ $currentExchangeRate?->rate ?? 2800 }};
+
+    // Convertir les revenus FC en USD pour l'affichage
+    const revenuesInUsd = revenueData.revenues.map(r => (r / exchangeRate).toFixed(2));
 
     // Détruire les anciens graphiques s'ils existent
     if (window.revenueChartInstance) {
@@ -348,11 +352,23 @@ function initCharts() {
                 labels: revenueData.labels,
                 datasets: [
                     {
-                        label: 'Revenus (€)',
+                        label: 'Revenus (FC)',
                         data: revenueData.revenues,
                         backgroundColor: 'rgba(94, 114, 228, 0.8)',
                         borderRadius: 4,
                         yAxisID: 'y',
+                    },
+                    {
+                        label: 'Équivalent ($)',
+                        data: revenuesInUsd,
+                        type: 'line',
+                        borderColor: '#f5365c',
+                        backgroundColor: 'rgba(245, 54, 92, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                        borderWidth: 2,
+                        pointRadius: 3,
                     },
                     {
                         label: 'Transactions',
@@ -362,7 +378,8 @@ function initCharts() {
                         backgroundColor: 'rgba(45, 206, 137, 0.1)',
                         fill: true,
                         tension: 0.4,
-                        yAxisID: 'y1',
+                        yAxisID: 'y2',
+                        borderDash: [5, 5],
                     }
                 ]
             },
@@ -385,7 +402,23 @@ function initCharts() {
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         padding: 12,
                         titleFont: { size: 14 },
-                        bodyFont: { size: 13 }
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.dataset.label === 'Revenus (FC)') {
+                                    label += new Intl.NumberFormat('fr-FR').format(context.parsed.y) + ' FC';
+                                } else if (context.dataset.label === 'Équivalent ($)') {
+                                    label += '$ ' + new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2}).format(context.parsed.y);
+                                } else {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -395,10 +428,15 @@ function initCharts() {
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Revenus (€)'
+                            text: 'Revenus (FC)'
                         },
                         grid: {
                             drawBorder: false,
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('fr-FR', {notation: 'compact'}).format(value);
+                            }
                         }
                     },
                     y1: {
@@ -407,11 +445,21 @@ function initCharts() {
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Transactions'
+                            text: 'USD ($)'
                         },
                         grid: {
                             drawOnChartArea: false,
                         },
+                        ticks: {
+                            callback: function(value) {
+                                return '$ ' + value;
+                            }
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: false,
+                        position: 'right',
                     },
                     x: {
                         grid: {

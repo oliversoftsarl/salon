@@ -322,16 +322,27 @@
     </div>
 </div>
 
-@script
 <script>
+document.addEventListener('livewire:navigated', initCharts);
+document.addEventListener('DOMContentLoaded', initCharts);
+
+function initCharts() {
     // Données pour les graphiques
     const revenueData = @json($dailyRevenueChart);
     const clientData = @json($clientFrequencyChart);
 
+    // Détruire les anciens graphiques s'ils existent
+    if (window.revenueChartInstance) {
+        window.revenueChartInstance.destroy();
+    }
+    if (window.clientChartInstance) {
+        window.clientChartInstance.destroy();
+    }
+
     // Graphique des revenus
     const revenueCtx = document.getElementById('revenueChart');
-    if (revenueCtx) {
-        new Chart(revenueCtx, {
+    if (revenueCtx && typeof Chart !== 'undefined') {
+        window.revenueChartInstance = new Chart(revenueCtx, {
             type: 'bar',
             data: {
                 labels: revenueData.labels,
@@ -414,8 +425,8 @@
 
     // Graphique de fréquentation clients
     const clientCtx = document.getElementById('clientChart');
-    if (clientCtx) {
-        new Chart(clientCtx, {
+    if (clientCtx && typeof Chart !== 'undefined') {
+        window.clientChartInstance = new Chart(clientCtx, {
             type: 'line',
             data: {
                 labels: clientData.labels,
@@ -466,6 +477,13 @@
             }
         });
     }
+}
+
+// Réinitialiser les graphiques quand Livewire met à jour le composant
+document.addEventListener('livewire:initialized', () => {
+    Livewire.hook('morph.updated', () => {
+        setTimeout(initCharts, 100);
+    });
+});
 </script>
-@endscript
 

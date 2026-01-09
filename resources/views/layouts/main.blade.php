@@ -46,12 +46,13 @@
     </div>
 </main>
 
+<!-- Chart.js pour les graphiques (doit être chargé en premier) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <!-- Core JS Argon -->
 <script src="{{ asset('assets/js/core/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js') }}"></script>
 <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
-<!-- Chart.js pour les graphiques -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
   // Initialisation du scrollbar comme dans le template Argon
   var win = navigator.platform.indexOf('Win') > -1;

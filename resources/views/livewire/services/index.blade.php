@@ -9,21 +9,21 @@
                 </div>
             @endif
             <div class="card">
-                <div class="card-header pb-0 d-flex flex-wrap gap-2 align-items-end justify-content-between">
-                    <div class="flex-grow-1">
-                        <label class="form-label mb-1">Rechercher</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="ni ni-zoom-split-in"></i></span>
-                            <input type="text" class="form-control" placeholder="Nom du service..." wire:model.live.debounce.300ms="search">
+                <div class="card-header pb-0">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 col-lg-4 mb-2 mb-md-0">
+                            <div class="input-group input-group-outline">
+                                <span class="input-group-text bg-white border-end-0"><i class="ni ni-zoom-split-in text-secondary"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" placeholder="Rechercher un service..." wire:model.live.debounce.300ms="search">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-8 text-md-end">
+                            <button class="btn btn-primary mb-0" wire:click="create">
+                                <i class="ni ni-fat-add me-1"></i> Nouveau service
+                            </button>
                         </div>
                     </div>
-                    <div class="text-end">
-                        <button class="btn btn-primary mt-3 mt-md-0" wire:click="create">
-                            <i class="ni ni-fat-add me-1"></i> Nouveau service
-                        </button>
-                    </div>
                 </div>
-                <br>
                 @if($editingId !== null)
                     <div class="card-body border-top">
                         <div class="row g-3">

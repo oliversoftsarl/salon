@@ -446,3 +446,63 @@
     }
 }
 
+/* ==========================================
+   HEADERS DE LISTE AVEC RECHERCHE ET BOUTONS
+   ========================================== */
+
+/* Style pour input-group avec icône de recherche */
+.input-group-outline {
+    position: relative;
+}
+
+.input-group-outline .input-group-text {
+    background: #fff;
+    border: 1px solid #d2d6da;
+    border-right: none;
+    padding: 0.5rem 0.75rem;
+}
+
+.input-group-outline .form-control {
+    border: 1px solid #d2d6da;
+    border-left: none;
+    height: 42px;
+}
+
+.input-group-outline .form-control:focus {
+    border-color: #5e72e4;
+    box-shadow: none;
+}
+
+.input-group-outline .form-control:focus + .input-group-text,
+.input-group-outline:focus-within .input-group-text {
+    border-color: #5e72e4;
+}
+
+/* Alignement vertical parfait pour les headers de carte */
+.card-header .row.align-items-center {
+    min-height: 42px;
+}
+
+.card-header .btn.mb-0 {
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sur mobile, le bouton prend toute la largeur */
+@media (max-width: 767.98px) {
+    .card-header .col-md-6.text-md-end {
+        margin-top: 0.75rem;
+    }
+
+    .card-header .col-md-6.text-md-end .btn {
+        width: 100%;
+    }
+}
+
+/* Style amélioré pour le placeholder de recherche */
+.card-header .form-control::placeholder {
+    color: #adb5bd;
+    font-size: 0.875rem;
+}

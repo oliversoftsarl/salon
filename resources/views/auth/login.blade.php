@@ -31,7 +31,7 @@
                     <label class="form-check-label" for="rememberMe">Se souvenir de moi</label>
                 </div>
                 <div class="text-center">
-                    <button type="submit" class="btn btn-lg btn-primary w-100 mt-4 mb-0">Se connecter</button>
+                    <button type="submit" class="btn btn-lg w-100 mt-4 mb-0" style="background: linear-gradient(135deg, #4a5d23 0%, #6b8e23 100%); border: none; color: white;">Se connecter</button>
                 </div>
             </form>
         </div>

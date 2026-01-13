@@ -40,14 +40,14 @@
                     </select>
                 </div>
                 <div class="text-center">
-                    <button type="submit" class="btn btn-lg btn-success w-100 mt-4 mb-0">Créer le compte</button>
+                    <button type="submit" class="btn btn-lg w-100 mt-4 mb-0" style="background: linear-gradient(135deg, #4a5d23 0%, #6b8e23 100%); border: none; color: white;">Créer le compte</button>
                 </div>
             </form>
         </div>
         <div class="card-footer text-center pt-0 px-lg-2 px-1">
             <p class="mb-4 text-sm mx-auto">
                 Déjà inscrit ?
-                <a href="{{ route('login') }}" class="text-primary text-gradient font-weight-bold">Se connecter</a>
+                <a href="{{ route('login') }}" class="font-weight-bold" style="color: #4a5d23;">Se connecter</a>
             </p>
         </div>
     </div>

@@ -453,6 +453,7 @@
 /* Style pour input-group avec icône de recherche */
 .input-group-outline {
     position: relative;
+    width: 100%;
 }
 
 .input-group-outline .input-group-text {
@@ -460,12 +461,15 @@
     border: 1px solid #d2d6da;
     border-right: none;
     padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem 0 0 0.5rem;
 }
 
 .input-group-outline .form-control {
     border: 1px solid #d2d6da;
     border-left: none;
     height: 42px;
+    border-radius: 0 0.5rem 0.5rem 0;
+    flex: 1;
 }
 
 .input-group-outline .form-control:focus {
@@ -473,7 +477,6 @@
     box-shadow: none;
 }
 
-.input-group-outline .form-control:focus + .input-group-text,
 .input-group-outline:focus-within .input-group-text {
     border-color: #5e72e4;
 }
@@ -483,20 +486,39 @@
     min-height: 42px;
 }
 
+/* Colonne de recherche prend tout l'espace disponible */
+.card-header .row.align-items-center > [class*="col-"]:first-child {
+    flex: 1;
+    max-width: none;
+}
+
+/* Colonne du bouton s'adapte à son contenu */
+.card-header .row.align-items-center > [class*="col-"]:last-child {
+    flex: 0 0 auto;
+    width: auto;
+}
+
 .card-header .btn.mb-0 {
     height: 42px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
 }
 
-/* Sur mobile, le bouton prend toute la largeur */
+/* Sur mobile, stack les éléments verticalement */
 @media (max-width: 767.98px) {
-    .card-header .col-md-6.text-md-end {
-        margin-top: 0.75rem;
+    .card-header .row.align-items-center {
+        flex-direction: column;
     }
 
-    .card-header .col-md-6.text-md-end .btn {
+    .card-header .row.align-items-center .col,
+    .card-header .row.align-items-center .col-auto {
+        width: 100%;
+        flex: none;
+    }
+
+    .card-header .row.align-items-center .col-auto .btn {
         width: 100%;
     }
 }

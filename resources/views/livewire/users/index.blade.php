@@ -18,14 +18,14 @@
 
     <div class="card">
         <div class="card-header pb-0">
-            <div class="row align-items-center">
-                <div class="col-md-6 col-lg-4 mb-2 mb-md-0">
+            <div class="row align-items-center g-3">
+                <div class="col">
                     <div class="input-group input-group-outline">
                         <span class="input-group-text bg-white border-end-0"><i class="ni ni-zoom-split-in text-secondary"></i></span>
                         <input type="text" class="form-control border-start-0 ps-0" placeholder="Rechercher par nom, email, rôle..." wire:model.live.debounce.300ms="search">
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-8 text-md-end">
+                <div class="col-auto">
                     <button class="btn btn-primary mb-0" wire:click="create">
                         <i class="ni ni-fat-add me-1"></i> Nouvel utilisateur
                     </button>

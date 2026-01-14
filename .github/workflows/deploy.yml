@@ -1,0 +1,188 @@
+name: 🚀 Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PHP_VERSION: '8.2'
+  NODE_VERSION: '20'
+
+jobs:
+  # ============================================
+  # JOB 1: Tests et Build
+  # ============================================
+  build:
+    name: 🔨 Build Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, json, zip, bcmath
+          coverage: none
+
+      - name: 📦 Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: 💾 Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: 📥 Install Composer dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install NPM dependencies
+        run: npm ci
+
+      - name: 🔨 Build assets
+        run: npm run build
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            vendor/
+            public/build/
+            bootstrap/cache/
+          retention-days: 1
+
+  # ============================================
+  # JOB 2: Déploiement
+  # ============================================
+  deploy:
+    name: 🚀 Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: .
+
+      - name: 🔑 Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📅 Generate release name
+        id: release
+        run: echo "name=$(date +'%Y%m%d_%H%M%S')_${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: 📤 Deploy to server
+        run: |
+          # Créer le dossier de release
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "mkdir -p ${{ secrets.VPS_PATH }}/releases/${{ steps.release.outputs.name }}"
+
+          # Synchroniser les fichiers
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='.env' \
+            --exclude='storage' \
+            --exclude='DEPLOYMENT.md' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/releases/${{ steps.release.outputs.name }}/
+
+      - name: 🔗 Activate release
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            set -e
+
+            RELEASE_PATH="${{ secrets.VPS_PATH }}/releases/${{ steps.release.outputs.name }}"
+            SHARED_PATH="${{ secrets.VPS_PATH }}/shared"
+            CURRENT_PATH="${{ secrets.VPS_PATH }}/current"
+
+            echo "🔗 Linking shared files..."
+            # Lier .env
+            ln -sfn ${SHARED_PATH}/.env ${RELEASE_PATH}/.env
+
+            # Lier storage
+            rm -rf ${RELEASE_PATH}/storage
+            ln -sfn ${SHARED_PATH}/storage ${RELEASE_PATH}/storage
+
+            echo "📦 Running Laravel optimizations..."
+            cd ${RELEASE_PATH}
+
+            # Migrations
+            php artisan migrate --force
+
+            # Cache
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan event:cache
+
+            # Storage link
+            php artisan storage:link --force 2>/dev/null || true
+
+            echo "🔄 Switching to new release..."
+            ln -sfn ${RELEASE_PATH} ${CURRENT_PATH}
+
+            echo "🔄 Reloading services..."
+            sudo /bin/systemctl reload php8.2-fpm
+
+            echo "🧹 Cleaning old releases (keeping last 5)..."
+            cd ${{ secrets.VPS_PATH }}/releases
+            ls -t | tail -n +6 | xargs -r rm -rf
+
+            echo "✅ Deployment completed successfully!"
+          ENDSSH
+
+      - name: ✅ Deployment notification
+        if: success()
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "Release: ${{ steps.release.outputs.name }}"
+          echo "URL: https://etcgobel.com"
+
+      - name: ❌ Rollback on failure
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            echo "⚠️ Deployment failed, checking for rollback..."
+            RELEASES_PATH="${{ secrets.VPS_PATH }}/releases"
+            CURRENT_PATH="${{ secrets.VPS_PATH }}/current"
+
+            # Trouver la release précédente
+            PREVIOUS_RELEASE=$(ls -t ${RELEASES_PATH} | sed -n '2p')
+
+            if [ -n "$PREVIOUS_RELEASE" ]; then
+              echo "🔙 Rolling back to ${PREVIOUS_RELEASE}..."
+              ln -sfn ${RELEASES_PATH}/${PREVIOUS_RELEASE} ${CURRENT_PATH}
+              sudo /bin/systemctl reload php8.2-fpm
+              echo "✅ Rollback completed"
+            else
+              echo "⚠️ No previous release found for rollback"
+            fi
+          ENDSSH
+

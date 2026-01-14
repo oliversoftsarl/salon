@@ -4,15 +4,107 @@
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   GitHub Repo   │────▶│  GitHub Actions │────▶│   VPS Debian    │
-│   (main branch) │     │   (CI/CD)       │     │   nginx + PHP   │
+│   GitHub Repo   │────▶│  Webhook Push   │────▶│   VPS Debian    │
+│   (main branch) │     │   (automatique) │     │   nginx + PHP   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
                                                         │
                                                         ▼
 ┌─────────────────┐                             ┌─────────────────┐
-│   Cloudflare    │◀────────────────────────────│  etcgobel.com   │
+│   Cloudflare    │◀────────────────────────────│  etsgobel.com   │
 │   (DNS + SSL)   │                             │   (Laravel App) │
 └─────────────────┘                             └─────────────────┘
+```
+
+---
+
+## 🔄 DÉPLOIEMENT AUTOMATIQUE (Webhook GitHub)
+
+### Configuration rapide (5 minutes)
+
+#### Étape 1 : Sur le VPS (en tant que root)
+
+```bash
+# 1. Copier le script de déploiement
+cat > /home/deploy/salon-gobel/deploy-from-webhook.sh << 'EOF'
+#!/bin/bash
+set -e
+
+VPS_PATH="/home/deploy/salon-gobel"
+REPO_URL="https://github.com/oliversoftsarl/salon.git"
+LOG_FILE="${VPS_PATH}/shared/storage/logs/deploy.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+log "🚀 Démarrage du déploiement automatique"
+
+RELEASE_NAME=$(date +'%Y%m%d_%H%M%S')
+RELEASE_PATH="${VPS_PATH}/releases/${RELEASE_NAME}"
+
+log "📦 Release: ${RELEASE_NAME}"
+
+git clone --depth 1 --branch main "$REPO_URL" "$RELEASE_PATH" >> "$LOG_FILE" 2>&1
+
+cd "$RELEASE_PATH"
+
+ln -sfn "${VPS_PATH}/shared/.env" "${RELEASE_PATH}/.env"
+rm -rf "${RELEASE_PATH}/storage"
+ln -sfn "${VPS_PATH}/shared/storage" "${RELEASE_PATH}/storage"
+
+composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader >> "$LOG_FILE" 2>&1
+
+npm ci >> "$LOG_FILE" 2>&1
+npm run build >> "$LOG_FILE" 2>&1
+
+php artisan migrate --force >> "$LOG_FILE" 2>&1
+php artisan config:cache >> "$LOG_FILE" 2>&1
+php artisan route:cache >> "$LOG_FILE" 2>&1
+php artisan view:cache >> "$LOG_FILE" 2>&1
+php artisan event:cache >> "$LOG_FILE" 2>&1
+php artisan storage:link --force >> "$LOG_FILE" 2>&1 || true
+php artisan livewire:publish --assets >> "$LOG_FILE" 2>&1 || true
+
+ln -sfn "$RELEASE_PATH" "${VPS_PATH}/current"
+
+sudo /bin/systemctl reload php8.2-fpm
+
+cd "${VPS_PATH}/releases"
+ls -t | tail -n +6 | xargs -r rm -rf
+
+log "✅ Déploiement terminé avec succès!"
+EOF
+
+chmod +x /home/deploy/salon-gobel/deploy-from-webhook.sh
+chown deploy:deploy /home/deploy/salon-gobel/deploy-from-webhook.sh
+
+# 2. Générer un secret pour le webhook
+WEBHOOK_SECRET=$(openssl rand -hex 32)
+echo "DEPLOY_WEBHOOK_SECRET=${WEBHOOK_SECRET}" >> /home/deploy/salon-gobel/shared/.env
+echo ""
+echo "🔑 Votre secret webhook (à copier pour GitHub):"
+echo "$WEBHOOK_SECRET"
+echo ""
+```
+
+#### Étape 2 : Configurer le Webhook sur GitHub
+
+1. Allez sur **https://github.com/oliversoftsarl/salon/settings/hooks**
+2. Cliquez sur **Add webhook**
+3. Configurez :
+   - **Payload URL**: `https://etsgobel.com/deploy-webhook.php`
+   - **Content type**: `application/json`
+   - **Secret**: Le secret généré à l'étape 1
+   - **Events**: Sélectionnez "Just the push event"
+4. Cliquez sur **Add webhook**
+
+#### Étape 3 : Tester
+
+Faites un commit et push sur `main`. Le déploiement se fera automatiquement !
+
+Voir les logs :
+```bash
+tail -f /home/deploy/salon-gobel/shared/storage/logs/deploy.log
 ```
 
 ---

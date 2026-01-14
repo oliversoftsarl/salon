@@ -145,11 +145,21 @@ jobs:
             # Storage link
             php artisan storage:link --force 2>/dev/null || true
 
+            # Publish Livewire assets
+            php artisan livewire:publish --assets 2>/dev/null || true
+
             echo "🔄 Switching to new release..."
             ln -sfn ${RELEASE_PATH} ${CURRENT_PATH}
 
-            echo "🔄 Reloading services..."
-            sudo /bin/systemctl reload php8.2-fpm
+            echo "🔄 Reloading PHP-FPM..."
+            # Try different methods to reload PHP-FPM
+            if command -v sudo &> /dev/null; then
+              sudo /bin/systemctl reload php8.2-fpm || true
+            elif [ -f /var/run/php/php8.2-fpm.pid ]; then
+              kill -USR2 $(cat /var/run/php/php8.2-fpm.pid) 2>/dev/null || true
+            else
+              echo "⚠️ Could not reload PHP-FPM automatically. Please reload manually if needed."
+            fi
 
             echo "🧹 Cleaning old releases (keeping last 5)..."
             cd ${{ secrets.VPS_PATH }}/releases
@@ -163,7 +173,7 @@ jobs:
         run: |
           echo "🎉 Deployment successful!"
           echo "Release: ${{ steps.release.outputs.name }}"
-          echo "URL: https://etcgobel.com"
+          echo "URL: https://etsgobel.com"
 
       - name: ❌ Rollback on failure
         if: failure()
@@ -179,7 +189,6 @@ jobs:
             if [ -n "$PREVIOUS_RELEASE" ]; then
               echo "🔙 Rolling back to ${PREVIOUS_RELEASE}..."
               ln -sfn ${RELEASES_PATH}/${PREVIOUS_RELEASE} ${CURRENT_PATH}
-              sudo /bin/systemctl reload php8.2-fpm
               echo "✅ Rollback completed"
             else
               echo "⚠️ No previous release found for rollback"

@@ -133,6 +133,16 @@
         </a>
       </li>
 
+      {{-- Dettes Staff --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('staff.debts') ? 'active' : '' }}" href="{{ route('staff.debts') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-credit-card text-danger text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Dettes Staff</span>
+        </a>
+      </li>
+
       {{-- Approvisionnements --}}
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('inventory.supplies') ? 'active' : '' }}" href="{{ route('inventory.supplies') }}">

@@ -97,6 +97,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Dettes du staff
+     */
+    public function debts()
+    {
+        return $this->hasMany(StaffDebt::class);
+    }
+
+    /**
+     * Dettes en cours (non remboursées)
+     */
+    public function pendingDebts()
+    {
+        return $this->hasMany(StaffDebt::class)->pending();
+    }
+
+    /**
+     * Total des dettes en cours
+     */
+    public function getTotalDebtAttribute(): float
+    {
+        return $this->debts()->pending()->sum(\DB::raw('amount - paid_amount'));
+    }
+
+    /**
      * Prestations effectuées par ce prestataire
      */
     public function prestations()

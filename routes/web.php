@@ -13,6 +13,7 @@ use App\Livewire\Clients\Index as ClientsIndex;
 use App\Livewire\Appointments\Calendar as AppointmentsCalendar;
 use App\Livewire\Staff\Schedule as StaffSchedule;
 use App\Livewire\Staff\Performance as StaffPerformance;
+use App\Livewire\Staff\Debts as StaffDebts;
 use App\Livewire\Pos\Checkout as PosCheckout;
 use App\Livewire\Users\Index as UsersIndex;
 use App\Livewire\Pos\TransactionsList as PosTransactionsList;
@@ -69,6 +70,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/staff/performance', StaffPerformance::class)
         ->middleware('role:admin')
         ->name('staff.performance');
+
+    Route::get('/staff/debts', StaffDebts::class)
+        ->middleware('role:admin')
+        ->name('staff.debts');
 
     Route::get('/pos', PosCheckout::class)
         ->middleware('role:admin,cashier')

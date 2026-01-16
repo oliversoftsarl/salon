@@ -289,7 +289,7 @@ class Debts extends Component
             'typeLabels' => StaffDebt::$typeLabels,
             'statusLabels' => StaffDebt::$statusLabels,
             'paymentMethodLabels' => StaffDebtPayment::$paymentMethodLabels,
-        ]);
+        ])->layout('layouts.main', ['title' => 'Dettes Staff']);
     }
 }
 

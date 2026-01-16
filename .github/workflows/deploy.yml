@@ -133,10 +133,20 @@ jobs:
             echo "📦 Running Laravel optimizations..."
             cd ${RELEASE_PATH}
 
-            # Migrations
-            php artisan migrate --force
+            # Vérifier la connexion à la base de données
+            echo "🔌 Checking database connection..."
+            php artisan db:show --counts || echo "⚠️ Could not connect to database"
+
+            # Migrations avec affichage détaillé
+            echo "🗄️ Running migrations..."
+            php artisan migrate --force --verbose
+
+            # Afficher le statut des migrations
+            echo "📋 Migration status:"
+            php artisan migrate:status | tail -20
 
             # Cache
+            echo "⚡ Caching configuration..."
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache

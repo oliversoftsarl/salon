@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Staff;
 
+use App\Models\CashMovement;
 use App\Models\Product;
 use App\Models\StaffDebt;
 use App\Models\StaffDebtPayment;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -193,14 +195,41 @@ class Debts extends Component
             return;
         }
 
-        $debt->addPayment(
-            $this->paymentAmount,
-            $this->paymentMethod,
-            auth()->id(),
-            $this->paymentNotes ?: null
-        );
+        DB::beginTransaction();
+        try {
+            // Enregistrer le paiement de la dette
+            $payment = $debt->addPayment(
+                $this->paymentAmount,
+                $this->paymentMethod,
+                auth()->id(),
+                $this->paymentNotes ?: null
+            );
 
-        session()->flash('success', 'Paiement enregistré avec succès.');
+            // Créer une entrée dans la caisse (remboursement = entrée d'argent)
+            // Sauf si c'est une retenue sur salaire (pas d'argent physique qui rentre)
+            if ($this->paymentMethod !== 'salary_deduction') {
+                CashMovement::create([
+                    'date' => now()->toDateString(),
+                    'type' => 'entry',
+                    'category' => 'other_income',
+                    'amount' => $this->paymentAmount,
+                    'description' => 'Remboursement dette - ' . $debt->user->name . ' (' . $debt->type_name . ')',
+                    'reference' => 'DEBT-' . $debt->id . '-PAY-' . $payment->id,
+                    'payment_method' => $this->paymentMethod,
+                    'user_id' => $debt->user_id,
+                    'created_by' => auth()->id(),
+                    'notes' => $this->paymentNotes ?: 'Remboursement automatique depuis gestion des dettes',
+                ]);
+            }
+
+            DB::commit();
+            session()->flash('success', 'Paiement enregistré avec succès.' . ($this->paymentMethod !== 'salary_deduction' ? ' Une entrée a été ajoutée dans la caisse.' : ''));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de l\'enregistrement: ' . $e->getMessage());
+            return;
+        }
+
         $this->closePaymentForm();
     }
 

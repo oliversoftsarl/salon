@@ -189,9 +189,10 @@ class Register extends Component
     {
         $this->validate();
 
-        // Validation supplémentaire pour avance sur salaire
-        if ($this->form_category === 'salary_advance' && !$this->form_user_id) {
-            $this->addError('form_user_id', 'Veuillez sélectionner un employé pour l\'avance sur salaire.');
+        // Validation supplémentaire pour avance sur salaire ou prêt au staff
+        $staffCategories = ['salary_advance', 'staff_loan'];
+        if (in_array($this->form_category, $staffCategories) && !$this->form_user_id) {
+            $this->addError('form_user_id', 'Veuillez sélectionner un employé.');
             return;
         }
 
@@ -203,9 +204,15 @@ class Register extends Component
             'description' => $this->form_description,
             'reference' => $this->form_reference ?: null,
             'payment_method' => $this->form_payment_method,
-            'user_id' => $this->form_category === 'salary_advance' ? $this->form_user_id : null,
+            'user_id' => in_array($this->form_category, $staffCategories) ? $this->form_user_id : null,
             'notes' => $this->form_notes ?: null,
             'created_by' => auth()->id(),
+        ];
+
+        // Déterminer le type de dette selon la catégorie
+        $debtTypeMap = [
+            'salary_advance' => 'advance',
+            'staff_loan' => 'loan',
         ];
 
         DB::beginTransaction();
@@ -218,25 +225,28 @@ class Register extends Component
 
                 $movement->update($data);
 
-                // Si c'était une avance sur salaire, mettre à jour la dette associée
-                if ($oldCategory === 'salary_advance' && $oldUserId) {
+                // Si c'était une catégorie liée au staff, mettre à jour la dette associée
+                if (in_array($oldCategory, $staffCategories) && $oldUserId) {
+                    $oldDebtType = $debtTypeMap[$oldCategory] ?? 'loan';
                     $debt = StaffDebt::where('user_id', $oldUserId)
-                        ->where('type', 'advance')
+                        ->where('type', $oldDebtType)
                         ->where('amount', $oldAmount)
                         ->where('description', 'like', '%Mouvement caisse #' . $this->editingId . '%')
                         ->first();
 
                     if ($debt) {
-                        if ($this->form_category === 'salary_advance') {
+                        if (in_array($this->form_category, $staffCategories)) {
                             // Mettre à jour la dette existante
+                            $newDebtType = $debtTypeMap[$this->form_category] ?? 'loan';
                             $debt->update([
                                 'user_id' => $this->form_user_id,
+                                'type' => $newDebtType,
                                 'amount' => $this->form_amount,
                                 'debt_date' => $this->form_date,
                                 'description' => $this->form_description . ' (Mouvement caisse #' . $movement->id . ')',
                             ]);
                         } else {
-                            // Ce n'est plus une avance, annuler la dette si pas de paiement
+                            // Ce n'est plus une catégorie staff, annuler la dette si pas de paiement
                             if ($debt->paid_amount == 0) {
                                 $debt->update(['status' => 'cancelled']);
                             }
@@ -248,11 +258,12 @@ class Register extends Component
             } else {
                 $movement = CashMovement::create($data);
 
-                // Créer automatiquement une dette pour les avances sur salaire
-                if ($this->form_category === 'salary_advance' && $this->form_user_id) {
+                // Créer automatiquement une dette pour les catégories liées au staff
+                if (in_array($this->form_category, $staffCategories) && $this->form_user_id) {
+                    $debtType = $debtTypeMap[$this->form_category] ?? 'loan';
                     StaffDebt::create([
                         'user_id' => $this->form_user_id,
-                        'type' => 'advance',
+                        'type' => $debtType,
                         'amount' => $this->form_amount,
                         'paid_amount' => 0,
                         'description' => $this->form_description . ' (Mouvement caisse #' . $movement->id . ')',

@@ -390,8 +390,8 @@
                                 @error('form_reference') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
 
-                            {{-- Employé (pour avance sur salaire) --}}
-                            @if($form_category === 'salary_advance')
+                            {{-- Employé (pour avance sur salaire ou prêt au staff) --}}
+                            @if(in_array($form_category, ['salary_advance', 'staff_loan']))
                                 <div class="col-md-6">
                                     <label class="form-label">Employé concerné <span class="text-danger">*</span></label>
                                     <select class="form-select @error('form_user_id') is-invalid @enderror" wire:model="form_user_id">

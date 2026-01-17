@@ -360,7 +360,7 @@
 
                             {{-- Montant --}}
                             <div class="col-md-4">
-                                <label class="form-label">Montant (€) *</label>
+                                <label class="form-label">Montant (FC) *</label>
                                 <input type="number" step="0.01" min="0" class="form-control" wire:model="form_amount" placeholder="0.00">
                                 @error('form_amount') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
@@ -393,14 +393,18 @@
                             {{-- Employé (pour avance sur salaire) --}}
                             @if($form_category === 'salary_advance')
                                 <div class="col-md-6">
-                                    <label class="form-label">Employé concerné</label>
-                                    <select class="form-select" wire:model="form_user_id">
-                                        <option value="">— Sélectionner —</option>
+                                    <label class="form-label">Employé concerné <span class="text-danger">*</span></label>
+                                    <select class="form-select @error('form_user_id') is-invalid @enderror" wire:model="form_user_id">
+                                        <option value="">— Sélectionner l'employé —</option>
                                         @foreach($staffList as $staff)
                                             <option value="{{ $staff->id }}">{{ $staff->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('form_user_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    <small class="text-muted">
+                                        <i class="ni ni-bulb-61 me-1"></i>
+                                        Une dette sera automatiquement créée pour cet employé
+                                    </small>
                                 </div>
                             @endif
 

@@ -3,6 +3,7 @@
 namespace App\Livewire\Cash;
 
 use App\Models\CashMovement;
+use App\Models\StaffDebt;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -188,6 +189,12 @@ class Register extends Component
     {
         $this->validate();
 
+        // Validation supplémentaire pour avance sur salaire
+        if ($this->form_category === 'salary_advance' && !$this->form_user_id) {
+            $this->addError('form_user_id', 'Veuillez sélectionner un employé pour l\'avance sur salaire.');
+            return;
+        }
+
         $data = [
             'type' => $this->form_type,
             'category' => $this->form_category,
@@ -201,12 +208,69 @@ class Register extends Component
             'created_by' => auth()->id(),
         ];
 
-        if ($this->editingId) {
-            CashMovement::findOrFail($this->editingId)->update($data);
-            session()->flash('success', 'Mouvement modifié avec succès.');
-        } else {
-            CashMovement::create($data);
-            session()->flash('success', 'Mouvement enregistré avec succès.');
+        DB::beginTransaction();
+        try {
+            if ($this->editingId) {
+                $movement = CashMovement::findOrFail($this->editingId);
+                $oldCategory = $movement->category;
+                $oldUserId = $movement->user_id;
+                $oldAmount = $movement->amount;
+
+                $movement->update($data);
+
+                // Si c'était une avance sur salaire, mettre à jour la dette associée
+                if ($oldCategory === 'salary_advance' && $oldUserId) {
+                    $debt = StaffDebt::where('user_id', $oldUserId)
+                        ->where('type', 'advance')
+                        ->where('amount', $oldAmount)
+                        ->where('description', 'like', '%Mouvement caisse #' . $this->editingId . '%')
+                        ->first();
+
+                    if ($debt) {
+                        if ($this->form_category === 'salary_advance') {
+                            // Mettre à jour la dette existante
+                            $debt->update([
+                                'user_id' => $this->form_user_id,
+                                'amount' => $this->form_amount,
+                                'debt_date' => $this->form_date,
+                                'description' => $this->form_description . ' (Mouvement caisse #' . $movement->id . ')',
+                            ]);
+                        } else {
+                            // Ce n'est plus une avance, annuler la dette si pas de paiement
+                            if ($debt->paid_amount == 0) {
+                                $debt->update(['status' => 'cancelled']);
+                            }
+                        }
+                    }
+                }
+
+                session()->flash('success', 'Mouvement modifié avec succès.');
+            } else {
+                $movement = CashMovement::create($data);
+
+                // Créer automatiquement une dette pour les avances sur salaire
+                if ($this->form_category === 'salary_advance' && $this->form_user_id) {
+                    StaffDebt::create([
+                        'user_id' => $this->form_user_id,
+                        'type' => 'advance',
+                        'amount' => $this->form_amount,
+                        'paid_amount' => 0,
+                        'description' => $this->form_description . ' (Mouvement caisse #' . $movement->id . ')',
+                        'debt_date' => $this->form_date,
+                        'status' => 'pending',
+                        'created_by' => auth()->id(),
+                        'notes' => 'Créé automatiquement depuis la gestion de caisse',
+                    ]);
+                }
+
+                session()->flash('success', 'Mouvement enregistré avec succès.');
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de l\'enregistrement: ' . $e->getMessage());
+            return;
         }
 
         $this->resetForm();

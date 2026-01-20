@@ -339,7 +339,7 @@
                 </div>
                 <div class="product-detail-item">
                     <div class="product-detail-label">Prix unitaire</div>
-                    <div class="product-detail-value">{{ number_format($product->price, 2, ',', ' ') }} €</div>
+                    <div class="product-detail-value">{{ number_format($product->price, 0, ',', ' ') }} FC</div>
                 </div>
                 <div class="product-detail-item">
                     <div class="product-detail-label">Stock actuel</div>
@@ -379,13 +379,13 @@
             <div class="financial-box">
                 <div class="financial-box-inner entries">
                     <div class="financial-label">Valeur des entrées (coût)</div>
-                    <div class="financial-value">{{ number_format($summary['entry_value'] ?? 0, 2, ',', ' ') }} €</div>
+                    <div class="financial-value">{{ number_format($summary['entry_value'] ?? 0, 0, ',', ' ') }} FC</div>
                 </div>
             </div>
             <div class="financial-box">
                 <div class="financial-box-inner sales">
                     <div class="financial-label">Valeur des ventes (prix)</div>
-                    <div class="financial-value">{{ number_format($summary['sales_value'] ?? 0, 2, ',', ' ') }} €</div>
+                    <div class="financial-value">{{ number_format($summary['sales_value'] ?? 0, 0, ',', ' ') }} FC</div>
                 </div>
             </div>
         </div>

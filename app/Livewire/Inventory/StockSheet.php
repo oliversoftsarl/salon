@@ -105,22 +105,31 @@ class StockSheet extends Component
 
     private function calculateStockBefore(int $productId, Carbon $date): int
     {
-        // Entrées avant la date (approvisionnements)
-        $suppliesBefore = ProductSupply::where('product_id', $productId)
-            ->where('received_at', '<', $date)
+        // Méthode: Partir du stock actuel et retrancher les mouvements depuis la date
+        $product = Product::find($productId);
+        if (!$product) {
+            return 0;
+        }
+
+        $currentStock = (int) $product->stock_quantity;
+
+        // Entrées depuis la date (à retrancher car on remonte dans le temps)
+        $suppliesSince = ProductSupply::where('product_id', $productId)
+            ->where('received_at', '>=', $date)
             ->sum('quantity_received');
 
-        // Sorties avant la date (consommations)
-        $consumptionsBefore = ProductConsumption::where('product_id', $productId)
-            ->where('used_at', '<', $date)
+        // Sorties depuis la date (consommations - à rajouter car on remonte)
+        $consumptionsSince = ProductConsumption::where('product_id', $productId)
+            ->where('used_at', '>=', $date)
             ->sum('quantity_used');
 
-        // Sorties avant la date (ventes)
-        $salesBefore = TransactionItem::where('product_id', $productId)
-            ->whereHas('transaction', fn($q) => $q->where('created_at', '<', $date))
+        // Sorties depuis la date (ventes - à rajouter car on remonte)
+        $salesSince = TransactionItem::where('product_id', $productId)
+            ->whereHas('transaction', fn($q) => $q->where('created_at', '>=', $date))
             ->sum('quantity');
 
-        return (int)($suppliesBefore - $consumptionsBefore - $salesBefore);
+        // Stock initial = Stock actuel - Entrées depuis + Sorties depuis
+        return (int)($currentStock - $suppliesSince + $consumptionsSince + $salesSince);
     }
 
     private function getMovements(int $productId, Carbon $dateFrom, Carbon $dateTo)

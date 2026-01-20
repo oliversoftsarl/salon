@@ -172,7 +172,7 @@
                             <div>
                                 <p class="text-sm mb-0 text-uppercase" style="opacity: 0.8;">Valeur des Entrées</p>
                                 <h4 class="font-weight-bolder mb-0">
-                                    {{ number_format($summary['entry_value'] ?? 0, 2, ',', ' ') }} €
+                                    {{ number_format($summary['entry_value'] ?? 0, 0, ',', ' ') }} FC
                                 </h4>
                             </div>
                             <div class="icon icon-shape bg-white shadow text-center border-radius-md">
@@ -189,7 +189,7 @@
                             <div>
                                 <p class="text-sm mb-0 text-uppercase" style="opacity: 0.8;">Valeur des Ventes</p>
                                 <h4 class="font-weight-bolder mb-0">
-                                    {{ number_format($summary['sales_value'] ?? 0, 2, ',', ' ') }} €
+                                    {{ number_format($summary['sales_value'] ?? 0, 0, ',', ' ') }} FC
                                 </h4>
                             </div>
                             <div class="icon icon-shape bg-white shadow text-center border-radius-md">

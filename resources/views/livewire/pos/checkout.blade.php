@@ -271,15 +271,20 @@
                                                     <strong class="text-dark">{{ number_format($it['price'] * $it['qty'], 0, ',', ' ') }} FC</strong>
                                                 </div>
                                                 @if(($it['type'] ?? '') === 'service')
-                                                    <select class="form-select form-select-sm mt-2" style="max-width: 180px;"
-                                                            wire:model="cart.{{ $i }}.stylist_id">
-                                                        <option value="">— Coiffeur —</option>
+                                                    <select class="form-select form-select-sm mt-2 {{ empty($it['stylist_id']) ? 'border-danger' : 'border-success' }}"
+                                                            style="max-width: 180px;"
+                                                            wire:model.live="cart.{{ $i }}.stylist_id"
+                                                            required>
+                                                        <option value="">— Coiffeur * —</option>
                                                         @isset($staff)
                                                             @foreach($staff as $s)
                                                                 <option value="{{ $s->id }}">{{ $s->name }}</option>
                                                             @endforeach
                                                         @endisset
                                                     </select>
+                                                    @if(empty($it['stylist_id']))
+                                                        <small class="text-danger d-block mt-1">Prestataire requis</small>
+                                                    @endif
                                                 @endif
                                             </div>
                                             <div class="d-flex align-items-center gap-2">

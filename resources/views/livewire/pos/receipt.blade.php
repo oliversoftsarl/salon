@@ -154,23 +154,22 @@
                     {{ Str::limit($item->product->name ?? $item->service->name ?? 'Article', 20) }}
                 </span>
                 <span class="receipt-item-qty">x{{ $item->quantity }}</span>
-                <span class="receipt-item-price">{{ number_format($item->line_total, 2, ',', ' ') }}€</span>
+                <span class="receipt-item-price">{{ number_format($item->line_total, 0, ',', ' ') }} FC</span>
             </div>
+            @if($item->service && $item->stylist)
+                <div class="receipt-item" style="font-size: 10px; color: #666; margin-top: -2px; padding-left: 8px;">
+                    <span class="receipt-item-name">↳ Coiffeur: {{ $item->stylist->name }}</span>
+                    <span class="receipt-item-qty"></span>
+                    <span class="receipt-item-price"></span>
+                </div>
+            @endif
         @endforeach
     </div>
 
     <div class="receipt-totals">
-        <div class="receipt-total-line">
-            <span>Sous-total:</span>
-            <span>{{ number_format($transaction->total, 2, ',', ' ') }} €</span>
-        </div>
-        <div class="receipt-total-line">
-            <span>TVA (20%):</span>
-            <span>{{ number_format($transaction->total * 0.20 / 1.20, 2, ',', ' ') }} €</span>
-        </div>
         <div class="receipt-total-line grand-total">
             <span>TOTAL:</span>
-            <span>{{ number_format($transaction->total, 2, ',', ' ') }} €</span>
+            <span>{{ number_format($transaction->total, 0, ',', ' ') }} FC</span>
         </div>
     </div>
 

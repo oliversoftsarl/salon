@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <title>Reçu #{{ $transaction->id }}</title>
     <style>
-        @page { 
-            margin: 0; 
+        @page {
+            margin: 0;
             padding: 0;
             size: 70mm auto; /* Largeur ticket sans hauteur fixe */
         }
-        body { 
-            font-family: 'DejaVu Sans Mono', monospace, sans-serif; 
+        body {
+            font-family: 'DejaVu Sans Mono', monospace, sans-serif;
             font-size: 9px; /* Réduit légèrement */
             width: 68mm; /* Légèrement plus petit que la page */
             margin: 0;
@@ -22,37 +22,37 @@
         .text-left { text-align: left; }
         .bold { font-weight: bold; }
         .underline { text-decoration: underline; }
-        .divider { 
-            border-top: 1px dashed #000; 
-            margin: 2px 0; 
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 2px 0;
         }
-        .double-divider { 
-            border-top: 2px solid #000; 
-            margin: 3px 0; 
+        .double-divider {
+            border-top: 2px solid #000;
+            margin: 3px 0;
         }
-        table { 
-            width: 100%; 
+        table {
+            width: 100%;
             border-collapse: collapse;
             margin: 0;
             padding: 0;
         }
-        table.items td { 
+        table.items td {
             padding: 0;
             margin: 0;
         }
-        table.items .qty { 
+        table.items .qty {
             width: 10%; /* Réduit */
-            text-align: center; 
+            text-align: center;
         }
-        table.items .desc { 
+        table.items .desc {
             width: 60%; /* Ajusté */
             word-wrap: break-word;
         }
-        table.items .price { 
-            width: 30%; 
-            text-align: right; 
+        table.items .price {
+            width: 30%;
+            text-align: right;
         }
-        .footer { 
+        .footer {
             font-size: 7px; /* Réduit */
             margin-top: 5px;
         }
@@ -120,7 +120,7 @@
                 <br><small style="font-size: 7px;">Coiffeur: {{ substr($item->stylist->name, 0, 50) }}</small>
                 @endif
             </td>
-            <td class="price" style="font-size: 8px;">{{ number_format($item->line_total, 2, ',', ' ') }}$</td>
+            <td class="price" style="font-size: 8px;">{{ number_format($item->line_total, 0, ',', ' ') }} FC</td>
         </tr>
         @endforeach
     </tbody>
@@ -129,7 +129,7 @@
 <div class="double-divider"></div>
 
 <div class="text-right bold" style="font-size: 10px;">
-    TOTAL: {{ number_format($transaction->total, 2, ',', ' ') }} $
+    TOTAL: {{ number_format($transaction->total, 0, ',', ' ') }} FC
 </div>
 
 <div class="divider"></div>

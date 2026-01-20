@@ -255,6 +255,16 @@ class Checkout extends Component
             return;
         }
 
+        // Vérification que tous les services ont un prestataire sélectionné
+        foreach ($this->cart as $index => $item) {
+            if (($item['type'] ?? null) === 'service') {
+                if (empty($item['stylist_id'])) {
+                    $this->addError('cart', 'Veuillez sélectionner un prestataire pour le service "' . $item['name'] . '".');
+                    return;
+                }
+            }
+        }
+
         $this->validate([
             'client_id' => ['nullable', 'exists:clients,id'],
         ]);

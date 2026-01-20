@@ -17,7 +17,10 @@
                                 <input type="text" class="form-control border-start-0 ps-0" placeholder="Rechercher un service..." wire:model.live.debounce.300ms="search">
                             </div>
                         </div>
-                        <div class="col-auto">
+                        <div class="col-auto d-flex gap-2">
+                            <button class="btn btn-outline-dark mb-0" wire:click="printList" title="Imprimer la liste">
+                                <i class="ni ni-single-copy-04 me-1"></i> Imprimer
+                            </button>
                             <button class="btn btn-primary mb-0" wire:click="create">
                                 <i class="ni ni-fat-add me-1"></i> Nouveau service
                             </button>

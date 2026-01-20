@@ -107,6 +107,11 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function printList()
+    {
+        return redirect()->route('services.print');
+    }
+
     private function resetForm(): void
     {
         $this->name = '';

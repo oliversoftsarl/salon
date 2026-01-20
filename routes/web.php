@@ -55,6 +55,30 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('role:admin,staff')
         ->name('services.index');
 
+    Route::get('/services/print', function () {
+        $services = \App\Models\Service::where('active', true)
+            ->orderBy('service_type')
+            ->orderBy('name')
+            ->get();
+
+        $exchangeRate = \App\Models\ExchangeRate::where('is_active', true)->first();
+
+        $pdf = Pdf::loadView('pdf.services-list', [
+            'services' => $services,
+            'exchangeRate' => $exchangeRate,
+            'company' => [
+                'name' => 'Salon de Coiffure Gobel',
+                'address' => 'Q. Office 1 Kanisa la mungu',
+                'city' => 'NK Goma',
+                'phone' => '243 990 378 202',
+            ],
+            'date' => now()->format('d/m/Y'),
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+        return $pdf->download('liste-services-' . now()->format('Y-m-d') . '.pdf');
+    })->middleware('role:admin,staff')->name('services.print');
+
     Route::get('/products', ProductsIndex::class)
         ->middleware('role:admin,staff')
         ->name('products.index');

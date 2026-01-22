@@ -12,13 +12,15 @@ class Index extends Component
     use WithPagination;
 
     public string $search = '';
+    public string $filterCategory = '';
     public ?int $editingId = null;
 
     public string $name = '';
     public ?string $sku = null;
     public string $price = '0.00';
     public int $stock_quantity = 0;
-    public bool $is_snack = true;
+    public string $category = 'both';
+    public bool $is_snack = false;
 
     protected function rules(): array
     {
@@ -27,6 +29,7 @@ class Index extends Component
             'sku' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock_quantity' => ['required', 'integer', 'min:0'],
+            'category' => ['required', 'in:sale,consumption,both'],
             'is_snack' => ['boolean'],
         ];
     }
@@ -41,6 +44,8 @@ class Index extends Component
         'stock_quantity.required' => 'Le stock est requis.',
         'stock_quantity.integer' => 'Le stock doit être un entier.',
         'stock_quantity.min' => 'Le stock ne peut pas être négatif.',
+        'category.required' => 'La catégorie est requise.',
+        'category.in' => 'La catégorie sélectionnée est invalide.',
     ];
 
     public function updated(string $propertyName): void
@@ -55,11 +60,13 @@ class Index extends Component
             $q->where('name', 'like', "%{$this->search}%")
                 ->orWhere('sku', 'like', "%{$this->search}%")
             )
+            ->when($this->filterCategory, fn ($q) => $q->where('category', $this->filterCategory))
             ->orderByDesc('id')
             ->paginate(10);
 
         return view('livewire.products.index', [
             'products' => $products,
+            'categories' => Product::CATEGORIES,
         ])->layout('layouts.main', ['title' => 'Produits']);
     }
 
@@ -77,6 +84,7 @@ class Index extends Component
         $this->sku = $p->sku;
         $this->price = (string) $p->price;
         $this->stock_quantity = (int) $p->stock_quantity;
+        $this->category = $p->category ?? 'both';
         $this->is_snack = (bool) $p->is_snack;
     }
 
@@ -185,6 +193,7 @@ class Index extends Component
         $this->sku = null;
         $this->price = '0.00';
         $this->stock_quantity = 0;
-        $this->is_snack = true;
+        $this->category = 'both';
+        $this->is_snack = false;
     }
 }

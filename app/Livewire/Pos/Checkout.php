@@ -41,7 +41,9 @@ class Checkout extends Component
 
     public function render()
     {
+        // Ne montrer que les produits qui peuvent être vendus (sale ou both)
         $products = Product::query()
+            ->whereIn('category', ['sale', 'both'])
             ->when($this->productSearch, fn ($q) =>
                 $q->where('name', 'like', "%{$this->productSearch}%")->orWhere('sku', 'like', "%{$this->productSearch}%"))
             ->orderBy('name')->limit(10)->get();

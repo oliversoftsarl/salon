@@ -88,11 +88,14 @@ class Consumptions extends Component
 
     public function render()
     {
-        $products = Product::orderBy('name')->get(['id','name','is_consumable','low_stock_threshold','stock_quantity']);
+        // Ne montrer que les produits qui peuvent être consommés (consumption ou both)
+        $products = Product::whereIn('category', ['consumption', 'both'])
+            ->orderBy('name')
+            ->get(['id','name','is_consumable','low_stock_threshold','stock_quantity','category']);
         $staff = User::orderBy('name')->get(['id','name']);
 
         $q = ProductConsumption::query()
-            ->with(['product:id,name,stock_quantity,low_stock_threshold,is_consumable', 'staff:id,name'])
+            ->with(['product:id,name,stock_quantity,low_stock_threshold,is_consumable,category', 'staff:id,name'])
             ->when($this->date_from, fn($qr) => $qr->whereDate('used_at', '>=', Carbon::parse($this->date_from)))
             ->when($this->date_to, fn($qr) => $qr->whereDate('used_at', '<=', Carbon::parse($this->date_to)))
             ->when($this->filter_product_id, fn($qr) => $qr->where('product_id', $this->filter_product_id))

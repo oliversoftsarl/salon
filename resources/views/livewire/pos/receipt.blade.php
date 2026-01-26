@@ -163,6 +163,13 @@
                     <span class="receipt-item-price"></span>
                 </div>
             @endif
+            @if($item->service && $item->masseur)
+                <div class="receipt-item" style="font-size: 10px; color: #666; margin-top: -2px; padding-left: 8px;">
+                    <span class="receipt-item-name">↳ Masseur: {{ $item->masseur->name }}</span>
+                    <span class="receipt-item-qty"></span>
+                    <span class="receipt-item-price"></span>
+                </div>
+            @endif
         @endforeach
     </div>
 

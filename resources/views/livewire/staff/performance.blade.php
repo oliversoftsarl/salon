@@ -271,6 +271,72 @@
         </div>
     </div>
 
+    {{-- Classement des Masseurs --}}
+    @if(isset($masseurPerformance) && $masseurPerformance->count() > 0)
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0"><i class="ni ni-satisfied me-2"></i>Classement des Masseurs</h6>
+                    <p class="text-sm text-secondary mb-0">Performance des masseurs par chiffre d'affaires généré</p>
+                </div>
+                <div class="card-body p-3">
+                    <div class="table-responsive">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">#</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Masseur</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">Massages</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3">CA Généré</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($masseurPerformance as $index => $perf)
+                                    <tr>
+                                        <td class="ps-2">
+                                            @if($index === 0)
+                                                <span class="badge bg-gradient-warning">🥇</span>
+                                            @elseif($index === 1)
+                                                <span class="badge bg-gradient-secondary">🥈</span>
+                                            @elseif($index === 2)
+                                                <span class="badge bg-gradient-dark">🥉</span>
+                                            @else
+                                                <span class="text-sm text-secondary">{{ $index + 1 }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-sm me-2 bg-gradient-info rounded-circle">
+                                                    <span class="text-white text-xs">{{ substr($perf->staff->name ?? '?', 0, 1) }}</span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-sm font-weight-bold">{{ $perf->staff->name ?? 'Inconnu' }}</span>
+                                                    @if($perf->staff?->staffProfile)
+                                                        <br><span class="badge bg-gradient-info text-xxs">{{ $perf->staff->staffProfile->role_title }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">{{ $perf->total_prestations }}</span>
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <span class="text-sm font-weight-bold text-success">
+                                                {{ number_format($perf->total_revenue, 2, ',', ' ') }} FC
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Graphique évolution journalière --}}
     <div class="row mt-4">
         <div class="col-12">

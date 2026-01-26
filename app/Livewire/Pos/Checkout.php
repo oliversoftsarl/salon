@@ -59,7 +59,13 @@ class Checkout extends Component
         // Liste du staff (tous users; adapte si tu veux filtrer par rôle)
         $staff = User::orderBy('name')->get(['id','name']);
 
-        return view('livewire.pos.checkout', compact('products', 'services', 'clients', 'staff'))
+        // Liste des masseurs (utilisateurs avec profil staff "Masseur/Masseuse")
+        $masseurs = User::whereHas('staffProfile', function($q) {
+            $q->where('role_title', 'like', '%Masseur%')
+              ->orWhere('role_title', 'like', '%Masseuse%');
+        })->orderBy('name')->get(['id','name']);
+
+        return view('livewire.pos.checkout', compact('products', 'services', 'clients', 'staff', 'masseurs'))
             ->layout('layouts.main', ['title' => 'Caisse']);
     }
 
@@ -315,6 +321,9 @@ class Checkout extends Component
                     'stylist_id'     => $item['type'] === 'service'
                         ? ($item['stylist_id'] ?? null)
                         : null,
+                    'masseur_id'     => $item['type'] === 'service'
+                        ? ($item['masseur_id'] ?? null)
+                        : null,
                     'quantity'       => $qty,
                     'unit_price'     => $unit,
                     'line_total'     => $line,
@@ -384,7 +393,7 @@ class Checkout extends Component
         if (!$this->lastTransactionId) {
             return null;
         }
-        return Transaction::with(['items.product', 'items.service', 'client'])->find($this->lastTransactionId);
+        return Transaction::with(['items.product', 'items.service', 'items.stylist', 'items.masseur', 'client'])->find($this->lastTransactionId);
     }
 
 
@@ -398,7 +407,8 @@ class Checkout extends Component
         }
         $row = compact('type', 'id', 'name', 'price', 'qty');
         if ($type === 'service') {
-            $row['stylist_id'] = null; // coiffeur à sélectionner
+            $row['stylist_id'] = null; // coiffeur à sélectionner (obligatoire)
+            $row['masseur_id'] = null; // masseur à sélectionner (optionnel)
         }
         $this->cart[] = $row;
     }

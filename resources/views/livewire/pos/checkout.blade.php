@@ -271,17 +271,29 @@
                                                     <strong class="text-dark">{{ number_format($it['price'] * $it['qty'], 0, ',', ' ') }} FC</strong>
                                                 </div>
                                                 @if(($it['type'] ?? '') === 'service')
-                                                    <select class="form-select form-select-sm mt-2 {{ empty($it['stylist_id']) ? 'border-danger' : 'border-success' }}"
-                                                            style="max-width: 180px;"
-                                                            wire:model.live="cart.{{ $i }}.stylist_id"
-                                                            required>
-                                                        <option value="">— Coiffeur * —</option>
-                                                        @isset($staff)
-                                                            @foreach($staff as $s)
-                                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                                            @endforeach
-                                                        @endisset
-                                                    </select>
+                                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                                        <select class="form-select form-select-sm {{ empty($it['stylist_id']) ? 'border-danger' : 'border-success' }}"
+                                                                style="max-width: 160px;"
+                                                                wire:model.live="cart.{{ $i }}.stylist_id"
+                                                                required>
+                                                            <option value="">— Coiffeur * —</option>
+                                                            @isset($staff)
+                                                                @foreach($staff as $s)
+                                                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                                                @endforeach
+                                                            @endisset
+                                                        </select>
+                                                        @if(isset($masseurs) && $masseurs->count() > 0)
+                                                            <select class="form-select form-select-sm border-info"
+                                                                    style="max-width: 160px;"
+                                                                    wire:model.live="cart.{{ $i }}.masseur_id">
+                                                                <option value="">— Masseur —</option>
+                                                                @foreach($masseurs as $m)
+                                                                    <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        @endif
+                                                    </div>
                                                     @if(empty($it['stylist_id']))
                                                         <small class="text-danger d-block mt-1">Prestataire requis</small>
                                                     @endif

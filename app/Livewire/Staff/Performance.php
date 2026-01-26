@@ -72,7 +72,8 @@ class Performance extends Component
 
     public function loadGlobalStats(): void
     {
-        $query = TransactionItem::query()
+        // Stats pour les prestataires (coiffeurs)
+        $queryStylists = TransactionItem::query()
             ->whereNotNull('stylist_id')
             ->whereNotNull('service_id')
             ->whereHas('transaction', function ($q) {
@@ -80,18 +81,31 @@ class Performance extends Component
                   ->whereDate('created_at', '<=', $this->date_to);
             });
 
+        // Stats pour les masseurs
+        $queryMasseurs = TransactionItem::query()
+            ->whereNotNull('masseur_id')
+            ->whereNotNull('service_id')
+            ->whereHas('transaction', function ($q) {
+                $q->whereDate('created_at', '>=', $this->date_from)
+                  ->whereDate('created_at', '<=', $this->date_to);
+            });
+
         if ($this->selected_staff_id) {
-            $query->where('stylist_id', $this->selected_staff_id);
+            $queryStylists->where('stylist_id', $this->selected_staff_id);
+            $queryMasseurs->where('masseur_id', $this->selected_staff_id);
         }
 
         $this->globalStats = [
-            'total_prestations' => (clone $query)->count(),
-            'total_revenue' => (clone $query)->sum('line_total'),
-            'avg_per_prestation' => (clone $query)->avg('line_total') ?? 0,
-            'unique_clients' => (clone $query)->whereHas('transaction', fn($q) => $q->whereNotNull('client_id'))
+            'total_prestations' => (clone $queryStylists)->count(),
+            'total_revenue' => (clone $queryStylists)->sum('line_total'),
+            'avg_per_prestation' => (clone $queryStylists)->avg('line_total') ?? 0,
+            'unique_clients' => (clone $queryStylists)->whereHas('transaction', fn($q) => $q->whereNotNull('client_id'))
                 ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
                 ->distinct('transactions.client_id')
                 ->count('transactions.client_id'),
+            // Stats masseurs
+            'total_massages' => (clone $queryMasseurs)->count(),
+            'total_revenue_masseurs' => (clone $queryMasseurs)->sum('line_total'),
         ];
     }
 
@@ -128,6 +142,35 @@ class Performance extends Component
 
         return $query->get()->map(function ($item) {
             $item->staff = User::with('staffProfile')->find($item->stylist_id);
+            return $item;
+        });
+    }
+
+    public function getMasseurPerformanceProperty()
+    {
+        $query = TransactionItem::query()
+            ->select(
+                'masseur_id',
+                DB::raw('COUNT(*) as total_prestations'),
+                DB::raw('SUM(line_total) as total_revenue'),
+                DB::raw('AVG(line_total) as avg_revenue'),
+                DB::raw('COUNT(DISTINCT transaction_id) as total_transactions')
+            )
+            ->whereNotNull('masseur_id')
+            ->whereNotNull('service_id')
+            ->whereHas('transaction', function ($q) {
+                $q->whereDate('created_at', '>=', $this->date_from)
+                  ->whereDate('created_at', '<=', $this->date_to);
+            })
+            ->groupBy('masseur_id')
+            ->orderByDesc('total_revenue');
+
+        if ($this->selected_staff_id) {
+            $query->where('masseur_id', $this->selected_staff_id);
+        }
+
+        return $query->get()->map(function ($item) {
+            $item->staff = User::with('staffProfile')->find($item->masseur_id);
             return $item;
         });
     }
@@ -206,6 +249,7 @@ class Performance extends Component
         return view('livewire.staff.performance', [
             'staffList' => $this->staffList,
             'staffPerformance' => $this->staffPerformance,
+            'masseurPerformance' => $this->masseurPerformance,
             'servicesByStaff' => $this->servicesByStaff,
             'recentPrestations' => $this->recentPrestations,
             'dailyStats' => $this->dailyStats,

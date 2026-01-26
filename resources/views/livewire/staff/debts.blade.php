@@ -103,12 +103,12 @@
     {{-- Filtres et bouton ajouter --}}
     <div class="card mb-4">
         <div class="card-header pb-0">
-            <div class="row align-items-center g-3">
-                <div class="col">
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+                <div class="flex-grow-1">
                     <h6 class="mb-0"><i class="ni ni-credit-card me-2"></i>Gestion des Dettes Staff</h6>
                 </div>
-                <div class="col-auto">
-                    <button class="btn btn-primary mb-0" wire:click="openDebtForm">
+                <div class="flex-shrink-0">
+                    <button class="btn btn-primary mb-0 w-100 w-md-auto" wire:click="openDebtForm">
                         <i class="ni ni-fat-add me-1"></i> Nouvelle dette
                     </button>
                 </div>
@@ -232,19 +232,13 @@
                             </td>
                             <td class="text-end pe-3">
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-info px-2 py-1" wire:click="showDetail({{ $debt->id }})" title="Détails">
-                                        <i class="ni ni-zoom-split-in"></i>
-                                    </button>
                                     @if($debt->status !== 'paid' && $debt->status !== 'cancelled')
-                                        <button class="btn btn-sm btn-outline-success px-2 py-1" wire:click="openPaymentForm({{ $debt->id }})" title="Enregistrer paiement">
-                                            <i class="ni ni-money-coins"></i>
-                                        </button>
                                         <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="openDebtForm({{ $debt->id }})" title="Modifier">
                                             <i class="ni ni-ruler-pencil"></i>
                                         </button>
                                     @endif
                                     @if($debt->paid_amount == 0 && $debt->status !== 'cancelled')
-                                        <button class="btn btn-sm btn-outline-warning px-2 py-1" wire:click="cancelDebt({{ $debt->id }})" onclick="return confirm('Annuler cette dette ?')" title="Annuler">
+                                        <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="cancelDebt({{ $debt->id }})" onclick="return confirm('Supprimer cette dette ?')" title="Supprimer">
                                             <i class="ni ni-fat-remove"></i>
                                         </button>
                                     @endif

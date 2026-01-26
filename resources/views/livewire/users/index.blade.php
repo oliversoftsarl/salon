@@ -18,15 +18,15 @@
 
     <div class="card">
         <div class="card-header pb-0">
-            <div class="row align-items-center g-3">
-                <div class="col">
-                    <div class="input-group input-group-outline">
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+                <div class="flex-grow-1">
+                    <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="ni ni-zoom-split-in text-secondary"></i></span>
                         <input type="text" class="form-control border-start-0 ps-0" placeholder="Rechercher par nom, email, rôle..." wire:model.live.debounce.300ms="search">
                     </div>
                 </div>
-                <div class="col-auto">
-                    <button class="btn btn-primary mb-0" wire:click="create">
+                <div class="flex-shrink-0">
+                    <button class="btn btn-primary mb-0 w-100 w-md-auto" wire:click="create">
                         <i class="ni ni-fat-add me-1"></i> Nouvel utilisateur
                     </button>
                 </div>
@@ -100,7 +100,7 @@
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Fonction</th>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 80px;">Rôle</th>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Statut</th>
-                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 100px;">Actions</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 160px;">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -136,17 +136,13 @@
                             </span>
                         </td>
                         <td class="text-end pe-3">
-                            <div class="dropdown d-inline-block">
-                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="ni ni-settings-gear-65"></i>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="edit({{ $u->id }})" title="Modifier">
+                                    <i class="ni ni-ruler-pencil"></i>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow">
-                                    <li><a class="dropdown-item" href="#" wire:click.prevent="edit({{ $u->id }})"><i class="ni ni-ruler-pencil me-2 text-primary"></i>Éditer</a></li>
-                                    <li><a class="dropdown-item" href="#" wire:click.prevent="toggleActive({{ $u->id }})"><i class="ni ni-button-power me-2 text-warning"></i>{{ $u->active ? 'Désactiver' : 'Activer' }}</a></li>
-                                    <li><a class="dropdown-item" href="#" wire:click.prevent="resetPassword({{ $u->id }})"><i class="ni ni-lock-circle-open me-2 text-info"></i>Réinitialiser MDP</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#" wire:click.prevent="delete({{ $u->id }})" onclick="return confirm('Supprimer cet utilisateur ?')"><i class="ni ni-fat-remove me-2"></i>Supprimer</a></li>
-                                </ul>
+                                <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="delete({{ $u->id }})" onclick="return confirm('Supprimer cet utilisateur ?')" title="Supprimer">
+                                    <i class="ni ni-fat-remove"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>

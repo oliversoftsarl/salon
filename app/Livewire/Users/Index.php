@@ -3,6 +3,7 @@
 namespace App\Livewire\Users;
 
 use App\Models\User;
+use App\Models\StaffProfile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -25,6 +26,24 @@ class Index extends Component
     public bool $active = true;
     public string $password = '';
     public string $password_confirmation = '';
+    public string $staff_category = '';
+
+    // Catégories de staff disponibles
+    public array $staffCategories = [
+        '' => '-- Sélectionner une fonction --',
+        'Coiffeur/Coiffeuse' => 'Coiffeur/Coiffeuse',
+        'Masseur/Masseuse' => 'Masseur/Masseuse',
+        'Esthéticien(ne)' => 'Esthéticien(ne)',
+        'Manucure' => 'Manucure',
+        'Pédicure' => 'Pédicure',
+        'Maquilleur/Maquilleuse' => 'Maquilleur/Maquilleuse',
+        'Barbier' => 'Barbier',
+        'Réceptionniste' => 'Réceptionniste',
+        'Caissier/Caissière' => 'Caissier/Caissière',
+        'Manager' => 'Manager',
+        'Assistant(e)' => 'Assistant(e)',
+        'Autre' => 'Autre',
+    ];
 
     protected function rules(): array
     {
@@ -40,6 +59,7 @@ class Index extends Component
             'active' => ['boolean'],
             'password' => [$this->editingId ? 'nullable' : 'required', 'string', 'min:8', 'same:password_confirmation'],
             'password_confirmation' => [$this->editingId ? 'nullable' : 'required', 'string', 'min:8'],
+            'staff_category' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -63,6 +83,7 @@ class Index extends Component
     public function render()
     {
         $users = User::query()
+            ->with('staffProfile')
             ->when($this->search, fn($q) =>
                 $q->where('name', 'like', "%{$this->search}%")
                   ->orWhere('email', 'like', "%{$this->search}%")
@@ -83,7 +104,7 @@ class Index extends Component
 
     public function edit(int $id): void
     {
-        $u = User::findOrFail($id);
+        $u = User::with('staffProfile')->findOrFail($id);
         $this->editingId = $u->id;
         $this->name = $u->name;
         $this->email = $u->email;
@@ -91,6 +112,7 @@ class Index extends Component
         $this->active = (bool)$u->active;
         $this->password = '';
         $this->password_confirmation = '';
+        $this->staff_category = $u->staffProfile?->role_title ?? '';
     }
 
     public function save(): void
@@ -122,9 +144,33 @@ class Index extends Component
             }
 
             $u->update($data);
+
+            // Mettre à jour ou créer le profil staff si une catégorie est sélectionnée
+            if (!empty($this->staff_category)) {
+                StaffProfile::updateOrCreate(
+                    ['user_id' => $u->id],
+                    [
+                        'display_name' => $u->name,
+                        'role_title' => $this->staff_category,
+                        'hourly_rate' => $u->staffProfile?->hourly_rate ?? 0,
+                    ]
+                );
+            }
+
             session()->flash('success', 'Utilisateur mis à jour.');
         } else {
-            User::create($data);
+            $user = User::create($data);
+
+            // Créer le profil staff si une catégorie est sélectionnée
+            if (!empty($this->staff_category)) {
+                StaffProfile::create([
+                    'user_id' => $user->id,
+                    'display_name' => $user->name,
+                    'role_title' => $this->staff_category,
+                    'hourly_rate' => 0,
+                ]);
+            }
+
             session()->flash('success', 'Utilisateur créé.');
         }
 
@@ -160,7 +206,7 @@ class Index extends Component
         }
 
         $u->delete();
-        session()->flash('success', "Mot de passe réinitialisé. Nouveau mot de passe: {$plain}");
+        session()->flash('success', 'Utilisateur supprimé avec succès.');
     }
 
     private function isLastActiveAdmin(int $excludeUserId = 0): bool
@@ -182,5 +228,6 @@ class Index extends Component
         $this->active = true;
         $this->password = '';
         $this->password_confirmation = '';
+        $this->staff_category = '';
     }
 }

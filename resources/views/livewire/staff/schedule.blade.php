@@ -16,7 +16,7 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-6">
                             <label class="form-label">Membre du staff</label>
-                            <select class="form-select" wire:model="selected_user_id">
+                            <select class="form-select" wire:model.live="selected_user_id">
                                 <option value="">-- Choisir --</option>
                                 @foreach($users as $u)
                                     <option value="{{ $u->id }}">{{ $u->name }}</option>
@@ -25,18 +25,23 @@
                         </div>
                         @if($profile)
                             <div class="col-md-6">
-                                <div class="d-flex flex-wrap gap-3">
+                                <div class="d-flex flex-wrap gap-3 align-items-center">
                                     <div>
-                                        <span class="text-secondary text-sm d-block">Nom d’affichage</span>
+                                        <span class="text-secondary text-sm d-block">Nom d'affichage</span>
                                         <strong>{{ $profile->display_name }}</strong>
                                     </div>
                                     <div>
                                         <span class="text-secondary text-sm d-block">Rôle</span>
-                                        <strong>{{ $profile->role_title }}</strong>
+                                        <span class="badge bg-gradient-success">{{ $profile->role_title }}</span>
                                     </div>
                                     <div>
                                         <span class="text-secondary text-sm d-block">Taux horaire</span>
-                                        <strong>{{ number_format($profile->hourly_rate, 2, ',', ' ') }} €</strong>
+                                        <strong>{{ number_format($profile->hourly_rate, 2, ',', ' ') }} FC</strong>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <button class="btn btn-sm btn-outline-primary" wire:click="openProfileModal" title="Modifier le profil">
+                                            <i class="ni ni-settings-gear-65 me-1"></i> Modifier
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -143,4 +148,52 @@
             </div>
         @endif
     </div>
+
+    <!-- Modal d'édition du profil -->
+    @if($showProfileModal)
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="ni ni-single-02 me-2"></i>Modifier le profil du staff
+                    </h5>
+                    <button type="button" class="btn-close" wire:click="closeProfileModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom d'affichage <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" wire:model="edit_display_name" placeholder="Ex: Jean-Pierre">
+                        @error('edit_display_name') <small class="text-danger">{{ $message }}</small> @enderror
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rôle / Fonction <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-lg" wire:model="edit_role_title">
+                            <option value="">-- Sélectionner un rôle --</option>
+                            @foreach($availableRoles as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('edit_role_title') <small class="text-danger">{{ $message }}</small> @enderror
+                        <small class="text-muted">Inclut: Coiffeur, Masseuse/Masseur, Esthéticien, etc.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Taux horaire (FC) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" min="0" class="form-control form-control-lg" wire:model="edit_hourly_rate" placeholder="0.00">
+                            <span class="input-group-text">FC/heure</span>
+                        </div>
+                        @error('edit_hourly_rate') <small class="text-danger">{{ $message }}</small> @enderror
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeProfileModal">Annuler</button>
+                    <button type="button" class="btn btn-success" wire:click="saveProfile">
+                        <i class="ni ni-check-bold me-1"></i> Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

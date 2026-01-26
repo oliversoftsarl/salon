@@ -20,6 +20,28 @@ class Schedule extends Component
     public string $break_end_at = '';
     public bool $break_recurring = false;
 
+    // Profile edit form
+    public string $edit_display_name = '';
+    public string $edit_role_title = '';
+    public string $edit_hourly_rate = '';
+    public bool $showProfileModal = false;
+
+    // Rôles prédéfinis pour le staff
+    public array $availableRoles = [
+        'Coiffeur/Coiffeuse' => 'Coiffeur/Coiffeuse',
+        'Masseuse/Masseur' => 'Masseuse/Masseur',
+        'Esthéticien(ne)' => 'Esthéticien(ne)',
+        'Manucure' => 'Manucure',
+        'Pédicure' => 'Pédicure',
+        'Maquilleur/Maquilleuse' => 'Maquilleur/Maquilleuse',
+        'Barbier' => 'Barbier',
+        'Réceptionniste' => 'Réceptionniste',
+        'Caissier/Caissière' => 'Caissier/Caissière',
+        'Manager' => 'Manager',
+        'Assistant(e)' => 'Assistant(e)',
+        'Autre' => 'Autre',
+    ];
+
     public function render()
     {
         $users = User::orderBy('name')->get(['id', 'name']);
@@ -110,5 +132,50 @@ class Schedule extends Component
     {
         StaffBreak::findOrFail($id)->delete();
         session()->flash('success', 'Pause supprimée.');
+    }
+
+    public function openProfileModal(): void
+    {
+        if (!$this->selected_user_id) return;
+
+        $profile = StaffProfile::where('user_id', $this->selected_user_id)->first();
+        if ($profile) {
+            $this->edit_display_name = $profile->display_name;
+            $this->edit_role_title = $profile->role_title;
+            $this->edit_hourly_rate = (string) $profile->hourly_rate;
+        } else {
+            $user = User::find($this->selected_user_id);
+            $this->edit_display_name = $user?->name ?? 'Staff';
+            $this->edit_role_title = 'Coiffeur/Coiffeuse';
+            $this->edit_hourly_rate = '0';
+        }
+        $this->showProfileModal = true;
+    }
+
+    public function closeProfileModal(): void
+    {
+        $this->showProfileModal = false;
+        $this->resetValidation();
+    }
+
+    public function saveProfile(): void
+    {
+        $this->validate([
+            'edit_display_name' => ['required', 'string', 'max:255'],
+            'edit_role_title' => ['required', 'string', 'max:255'],
+            'edit_hourly_rate' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $profile = StaffProfile::updateOrCreate(
+            ['user_id' => $this->selected_user_id],
+            [
+                'display_name' => $this->edit_display_name,
+                'role_title' => $this->edit_role_title,
+                'hourly_rate' => $this->edit_hourly_rate,
+            ]
+        );
+
+        $this->showProfileModal = false;
+        session()->flash('success', 'Profil du staff mis à jour avec succès.');
     }
 }

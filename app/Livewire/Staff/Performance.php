@@ -127,7 +127,7 @@ class Performance extends Component
         }
 
         return $query->get()->map(function ($item) {
-            $item->staff = User::find($item->stylist_id);
+            $item->staff = User::with('staffProfile')->find($item->stylist_id);
             return $item;
         });
     }

@@ -87,7 +87,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Chiffre d'affaires</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    {{ number_format($globalStats['total_revenue'] ?? 0, 2, ',', ' ') }} €
+                                    {{ number_format($globalStats['total_revenue'] ?? 0, 2, ',', ' ') }} FC
                                 </h5>
                             </div>
                         </div>
@@ -108,7 +108,7 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Moyenne / Prestation</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    {{ number_format($globalStats['avg_per_prestation'] ?? 0, 2, ',', ' ') }} €
+                                    {{ number_format($globalStats['avg_per_prestation'] ?? 0, 2, ',', ' ') }} FC
                                 </h5>
                             </div>
                         </div>
@@ -183,7 +183,12 @@
                                                     <div class="avatar avatar-sm me-2 bg-gradient-primary rounded-circle">
                                                         <span class="text-white text-xs">{{ substr($perf->staff->name ?? '?', 0, 1) }}</span>
                                                     </div>
-                                                    <span class="text-sm font-weight-bold">{{ $perf->staff->name ?? 'Inconnu' }}</span>
+                                                    <div>
+                                                        <span class="text-sm font-weight-bold">{{ $perf->staff->name ?? 'Inconnu' }}</span>
+                                                        @if($perf->staff?->staffProfile)
+                                                            <br><span class="badge bg-gradient-success text-xxs">{{ $perf->staff->staffProfile->role_title }}</span>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td class="text-center">
@@ -191,7 +196,7 @@
                                             </td>
                                             <td class="text-end pe-3">
                                                 <span class="text-sm font-weight-bold text-success">
-                                                    {{ number_format($perf->total_revenue, 2, ',', ' ') }} €
+                                                    {{ number_format($perf->total_revenue, 2, ',', ' ') }} FC
                                                 </span>
                                             </td>
                                         </tr>
@@ -243,7 +248,7 @@
                                                 <span class="badge bg-primary">{{ $item->count }}</span>
                                             </td>
                                             <td class="text-end pe-3">
-                                                <span class="text-sm font-weight-bold">{{ number_format($item->revenue, 2, ',', ' ') }} €</span>
+                                                <span class="text-sm font-weight-bold">{{ number_format($item->revenue, 2, ',', ' ') }} FC</span>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -331,7 +336,7 @@
                                             <span class="text-sm">{{ $item->transaction->client->name ?? 'Client de passage' }}</span>
                                         </td>
                                         <td class="text-end pe-3">
-                                            <span class="badge bg-success">{{ number_format($item->line_total, 2, ',', ' ') }} €</span>
+                                            <span class="badge bg-success">{{ number_format($item->line_total, 2, ',', ' ') }} FC</span>
                                         </td>
                                     </tr>
                                 @empty
@@ -370,7 +375,7 @@
                     }),
                     datasets: [
                         {
-                            label: 'Revenus (€)',
+                            label: 'Revenus (FC)',
                             data: dailyData.map(d => d.revenue),
                             backgroundColor: 'rgba(94, 114, 228, 0.8)',
                             borderRadius: 4,
@@ -406,7 +411,7 @@
                             position: 'left',
                             title: {
                                 display: true,
-                                text: 'Revenus (€)'
+                                text: 'Revenus (FC)'
                             }
                         },
                         y1: {

@@ -56,8 +56,12 @@ class Checkout extends Component
             ->orderByDesc('id')->limit(50)->get()
             ->map(fn($c) => ['id' => $c->id, 'label' => $this->clientLabel($c)]);
 
-        // Liste du staff (tous users; adapte si tu veux filtrer par rôle)
-        $staff = User::orderBy('name')->get(['id','name']);
+        // Liste des prestataires (Coiffeurs et Barbiers uniquement)
+        $staff = User::whereHas('staffProfile', function($q) {
+            $q->where('role_title', 'like', '%Coiffeur%')
+              ->orWhere('role_title', 'like', '%Coiffeuse%')
+              ->orWhere('role_title', 'like', '%Barbier%');
+        })->orderBy('name')->get(['id','name']);
 
         // Liste des masseurs (utilisateurs avec profil staff "Masseur/Masseuse")
         $masseurs = User::whereHas('staffProfile', function($q) {

@@ -72,6 +72,16 @@
                         <label class="form-label">Confirmation</label>
                         <input type="password" class="form-control" wire:model="password_confirmation">
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Fonction / Catégorie</label>
+                        <select class="form-select" wire:model="staff_category">
+                            @foreach($staffCategories as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('staff_category') <small class="text-danger">{{ $message }}</small> @enderror
+                        <small class="text-muted">Ex: Coiffeur, Masseur, Esthéticien...</small>
+                    </div>
 
                     <div class="col-12 d-flex gap-2">
                         <button class="btn btn-success" wire:click="save"><i class="ni ni-check-bold me-1"></i> Enregistrer</button>
@@ -87,6 +97,7 @@
                 <tr>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Utilisateur</th>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Email</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Fonction</th>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 80px;">Rôle</th>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Statut</th>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 100px;">Actions</th>
@@ -99,10 +110,20 @@
                             <div class="d-flex flex-column">
                                 <span class="text-sm font-weight-bold text-truncate" style="max-width: 180px;" title="{{ $u->name }}">{{ $u->name }}</span>
                                 <span class="text-xs text-secondary d-md-none text-truncate" style="max-width: 180px;" title="{{ $u->email }}">{{ $u->email }}</span>
+                                @if($u->staffProfile?->role_title)
+                                    <span class="badge bg-gradient-success text-xxs d-lg-none mt-1" style="width: fit-content;">{{ $u->staffProfile->role_title }}</span>
+                                @endif
                             </div>
                         </td>
                         <td class="d-none d-md-table-cell">
                             <span class="text-xs text-truncate d-inline-block" style="max-width: 200px;" title="{{ $u->email }}">{{ $u->email }}</span>
+                        </td>
+                        <td class="d-none d-lg-table-cell">
+                            @if($u->staffProfile?->role_title)
+                                <span class="badge bg-gradient-success">{{ $u->staffProfile->role_title }}</span>
+                            @else
+                                <span class="text-xs text-muted">—</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             <span class="badge bg-{{ $u->role === 'admin' ? 'danger' : ($u->role === 'cashier' ? 'warning' : 'dark') }}">
@@ -130,7 +151,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="text-center py-4 text-muted">Aucun utilisateur</td></tr>
+                    <tr><td colspan="6" class="text-center py-4 text-muted">Aucun utilisateur</td></tr>
                 @endforelse
                 </tbody>
             </table>

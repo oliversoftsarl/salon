@@ -144,6 +144,144 @@
         </div>
     </div>
 
+    {{-- Section Recettes Hebdomadaires (visible si prestataire sélectionné) --}}
+    @if($selected_staff_id)
+    <div class="row mb-4">
+        {{-- Carte cumul manquants --}}
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-danger h-100">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <div class="numbers">
+                                <p class="text-sm mb-0 text-capitalize font-weight-bold text-danger">Cumul Manquants</p>
+                                <h4 class="font-weight-bolder mb-0 text-danger">
+                                    {{ number_format($totalShortage, 0, ',', ' ') }} FC
+                                </h4>
+                                <p class="text-xs text-muted mb-0">Total des montants non atteints</p>
+                            </div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <div class="icon icon-shape bg-gradient-danger shadow text-center border-radius-md">
+                                <i class="ni ni-notification-70 text-lg opacity-10"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{-- Carte objectif hebdomadaire --}}
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <div class="numbers">
+                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Objectif Hebdo</p>
+                                <h4 class="font-weight-bolder mb-0">
+                                    {{ number_format($weeklyTarget, 0, ',', ' ') }} FC
+                                </h4>
+                                <p class="text-xs text-muted mb-0">Montant cible par semaine</p>
+                            </div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
+                                <i class="ni ni-trophy text-lg opacity-10"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{-- Lien vers paramètres --}}
+        <div class="col-xl-4 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-body p-3 d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <p class="text-sm mb-1 font-weight-bold">Paramètres des recettes</p>
+                        <p class="text-xs text-muted mb-0">Modifier l'objectif ou calculer les semaines</p>
+                    </div>
+                    <a href="{{ route('settings.revenue') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="ni ni-settings-gear-65 me-1"></i> Gérer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Historique des recettes hebdomadaires --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0"><i class="ni ni-calendar-grid-58 me-2"></i>Historique des Recettes Hebdomadaires</h6>
+                    <p class="text-sm text-secondary mb-0">Dernières 12 semaines enregistrées</p>
+                </div>
+                <div class="card-body">
+                    @if($weeklyRevenueHistory->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Semaine</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Période</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end">Objectif</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end">Réalisé</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end">Différence</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3">Cumul Manquants</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($weeklyRevenueHistory as $week)
+                                        <tr>
+                                            <td class="ps-3">
+                                                <span class="badge bg-dark">S{{ $week->week_number }}/{{ $week->year }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-sm">
+                                                    {{ $week->week_start->format('d/m') }} - {{ $week->week_end->format('d/m/Y') }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="text-sm">{{ number_format($week->target_amount, 0, ',', ' ') }} FC</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="text-sm font-weight-bold">{{ number_format($week->actual_amount, 0, ',', ' ') }} FC</span>
+                                            </td>
+                                            <td class="text-end">
+                                                @if($week->difference >= 0)
+                                                    <span class="text-success font-weight-bold">+{{ number_format($week->difference, 0, ',', ' ') }} FC</span>
+                                                @else
+                                                    <span class="text-danger font-weight-bold">{{ number_format($week->difference, 0, ',', ' ') }} FC</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                @if($week->cumulative_shortage > 0)
+                                                    <span class="badge bg-danger">{{ number_format($week->cumulative_shortage, 0, ',', ' ') }} FC</span>
+                                                @else
+                                                    <span class="badge bg-success">0 FC</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-4 text-muted">
+                            <i class="ni ni-calendar-grid-58" style="font-size: 48px;"></i>
+                            <p class="mt-2">Aucune recette hebdomadaire enregistrée</p>
+                            <a href="{{ route('settings.revenue') }}" class="btn btn-sm btn-primary mt-2">
+                                <i class="ni ni-settings-gear-65 me-1"></i> Calculer les recettes
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="row g-3">
         {{-- Classement des prestataires --}}
         <div class="col-lg-6">

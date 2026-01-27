@@ -6,6 +6,7 @@ use App\Livewire\Inventory\Consumptions as InventoryConsumptions;
 use App\Livewire\Inventory\StockSheet as InventoryStockSheet;
 use App\Livewire\Cash\Register as CashRegister;
 use App\Livewire\Settings\ExchangeRates;
+use App\Livewire\Settings\RevenueSettings;
 
 use App\Livewire\Services\Index as ServicesIndex;
 use App\Livewire\Products\Index as ProductsIndex;
@@ -117,6 +118,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/settings/exchange-rates', ExchangeRates::class)
         ->middleware('role:admin')
         ->name('settings.exchange-rates');
+
+    Route::get('/settings/revenue', RevenueSettings::class)
+        ->middleware('role:admin')
+        ->name('settings.revenue');
 
     Route::get('/inventory/consumptions', InventoryConsumptions::class)
         ->middleware('role:admin,staff')

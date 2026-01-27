@@ -192,6 +192,16 @@
           <span class="nav-link-text ms-1">Taux de Change</span>
         </a>
       </li>
+
+      {{-- Paramètres Recettes --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.revenue') ? 'active' : '' }}" href="{{ route('settings.revenue') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-chart-bar-32 text-warning text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Recettes Hebdo</span>
+        </a>
+      </li>
       @endif
 
       {{-- Section Inventaire pour staff --}}

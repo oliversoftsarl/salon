@@ -22,7 +22,7 @@ class PayrollManager extends Component
 
     // Modal de paiement
     public bool $showPaymentModal = false;
-    public ?int $selectedStaffId = null;
+    public $selectedStaffId = null;
     public array $selectedStaff = [];
     public string $paymentType = 'weekly';
     public string $periodStart = '';
@@ -59,8 +59,11 @@ class PayrollManager extends Component
         $this->resetPage();
     }
 
-    public function updatedSelectedStaffId(): void
+    public function updatedSelectedStaffId($value): void
     {
+        // Convertir en int ou null
+        $this->selectedStaffId = $value ? (int) $value : null;
+
         if ($this->selectedStaffId) {
             $this->loadStaffData();
         } else {
@@ -163,7 +166,17 @@ class PayrollManager extends Component
 
     protected function loadStaffDebts(): void
     {
-        $debts = StaffDebt::where('user_id', $this->selectedStaffId)
+        // Réinitialiser les données
+        $this->staffDebts = [];
+        $this->totalDebts = 0;
+        $this->selectedDebtsToDeduct = [];
+        $this->deductDebts = 0;
+
+        if (!$this->selectedStaffId) {
+            return;
+        }
+
+        $debts = StaffDebt::where('user_id', (int) $this->selectedStaffId)
             ->whereIn('status', ['pending', 'partial'])
             ->orderBy('debt_date')
             ->get();
@@ -173,34 +186,44 @@ class PayrollManager extends Component
                 'id' => $debt->id,
                 'type' => $debt->type,
                 'type_label' => StaffDebt::$typeLabels[$debt->type] ?? $debt->type,
-                'amount' => $debt->amount,
-                'paid_amount' => $debt->paid_amount,
-                'remaining' => $debt->amount - $debt->paid_amount,
+                'amount' => (float) $debt->amount,
+                'paid_amount' => (float) $debt->paid_amount,
+                'remaining' => (float) ($debt->amount - $debt->paid_amount),
                 'date' => $debt->debt_date->format('d/m/Y'),
                 'description' => $debt->description,
             ];
         })->toArray();
 
         $this->totalDebts = collect($this->staffDebts)->sum('remaining');
-        $this->selectedDebtsToDeduct = [];
-        $this->deductDebts = 0;
     }
 
     protected function loadStaffShortages(): void
     {
+        // Réinitialiser les données
+        $this->staffShortages = [];
+        $this->totalShortage = 0;
+        $this->deductShortage = 0;
+
+        if (!$this->selectedStaffId) {
+            return;
+        }
+
         $staff = User::with('staffProfile')->find($this->selectedStaffId);
+
+        if (!$staff) {
+            return;
+        }
+
         $roleTitle = strtolower($staff->staffProfile?->role_title ?? '');
 
         // Seulement pour les coiffeurs/barbiers
         if (!str_contains($roleTitle, 'coiffeur') &&
             !str_contains($roleTitle, 'coiffeuse') &&
             !str_contains($roleTitle, 'barbier')) {
-            $this->staffShortages = [];
-            $this->totalShortage = 0;
             return;
         }
 
-        $shortages = StaffWeeklyRevenue::where('staff_id', $this->selectedStaffId)
+        $shortages = StaffWeeklyRevenue::where('staff_id', (int) $this->selectedStaffId)
             ->where('difference', '<', 0)
             ->orderByDesc('year')
             ->orderByDesc('week_number')
@@ -211,15 +234,14 @@ class PayrollManager extends Component
             return [
                 'id' => $shortage->id,
                 'week' => 'Semaine ' . $shortage->week_number . ' (' . $shortage->week_start->format('d/m') . ' - ' . $shortage->week_end->format('d/m') . ')',
-                'target' => $shortage->target_amount,
-                'actual' => $shortage->actual_amount,
-                'shortage' => abs($shortage->difference),
-                'cumulative' => $shortage->cumulative_shortage,
+                'target' => (float) $shortage->target_amount,
+                'actual' => (float) $shortage->actual_amount,
+                'shortage' => abs((float) $shortage->difference),
+                'cumulative' => (float) $shortage->cumulative_shortage,
             ];
         })->toArray();
 
-        $this->totalShortage = StaffWeeklyRevenue::getTotalShortage($this->selectedStaffId);
-        $this->deductShortage = 0;
+        $this->totalShortage = StaffWeeklyRevenue::getTotalShortage((int) $this->selectedStaffId);
     }
 
     protected function resetStaffData(): void

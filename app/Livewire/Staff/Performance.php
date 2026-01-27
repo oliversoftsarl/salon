@@ -5,6 +5,8 @@ namespace App\Livewire\Staff;
 use App\Models\User;
 use App\Models\TransactionItem;
 use App\Models\Service;
+use App\Models\StaffWeeklyRevenue;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -244,6 +246,42 @@ class Performance extends Component
         return $query->get();
     }
 
+    /**
+     * Obtenir l'historique des recettes hebdomadaires pour le staff sélectionné
+     */
+    public function getWeeklyRevenueHistoryProperty()
+    {
+        if (!$this->selected_staff_id) {
+            return collect();
+        }
+
+        return StaffWeeklyRevenue::where('staff_id', $this->selected_staff_id)
+            ->orderByDesc('year')
+            ->orderByDesc('week_number')
+            ->limit(12)
+            ->get();
+    }
+
+    /**
+     * Obtenir le cumul des manquants pour le staff sélectionné
+     */
+    public function getTotalShortageProperty(): float
+    {
+        if (!$this->selected_staff_id) {
+            return 0;
+        }
+
+        return StaffWeeklyRevenue::getTotalShortage($this->selected_staff_id);
+    }
+
+    /**
+     * Obtenir le montant cible hebdomadaire
+     */
+    public function getWeeklyTargetProperty(): float
+    {
+        return Setting::getWeeklyRevenueTarget();
+    }
+
     public function render()
     {
         return view('livewire.staff.performance', [
@@ -253,6 +291,9 @@ class Performance extends Component
             'servicesByStaff' => $this->servicesByStaff,
             'recentPrestations' => $this->recentPrestations,
             'dailyStats' => $this->dailyStats,
+            'weeklyRevenueHistory' => $this->weeklyRevenueHistory,
+            'totalShortage' => $this->totalShortage,
+            'weeklyTarget' => $this->weeklyTarget,
         ])->layout('layouts.main', ['title' => 'Performance des Prestataires']);
     }
 }

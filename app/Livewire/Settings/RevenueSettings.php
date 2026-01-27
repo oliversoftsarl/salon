@@ -13,6 +13,7 @@ class RevenueSettings extends Component
     public string $weekly_revenue_target = '';
     public bool $showCalculateModal = false;
     public string $calculate_week_start = '';
+    public bool $isCalculating = false;
 
     public function mount(): void
     {
@@ -39,12 +40,14 @@ class RevenueSettings extends Component
 
     public function openCalculateModal(): void
     {
+        $this->calculate_week_start = now()->startOfWeek()->toDateString();
         $this->showCalculateModal = true;
     }
 
     public function closeCalculateModal(): void
     {
         $this->showCalculateModal = false;
+        $this->isCalculating = false;
     }
 
     public function calculateWeeklyRevenues(): void
@@ -53,12 +56,63 @@ class RevenueSettings extends Component
             'calculate_week_start' => ['required', 'date'],
         ]);
 
-        $weekStart = Carbon::parse($this->calculate_week_start)->startOfWeek();
+        $this->isCalculating = true;
 
-        StaffWeeklyRevenue::calculateWeeklyRevenueForAllStaff($weekStart);
+        try {
+            $weekStart = Carbon::parse($this->calculate_week_start)->startOfWeek();
+            $weekEnd = $weekStart->copy()->endOfWeek();
 
-        $this->showCalculateModal = false;
-        session()->flash('success', 'Recettes hebdomadaires calculées pour la semaine du ' . $weekStart->format('d/m/Y') . '.');
+            StaffWeeklyRevenue::calculateWeeklyRevenueForAllStaff($weekStart);
+
+            $this->showCalculateModal = false;
+            $this->isCalculating = false;
+
+            session()->flash('success', 'Recettes hebdomadaires calculées avec succès pour la semaine du ' .
+                $weekStart->format('d/m/Y') . ' au ' . $weekEnd->format('d/m/Y') . '.');
+        } catch (\Exception $e) {
+            $this->isCalculating = false;
+            session()->flash('error', 'Erreur lors du calcul: ' . $e->getMessage());
+        }
+    }
+
+    public function calculateCurrentWeek(): void
+    {
+        $this->isCalculating = true;
+
+        try {
+            $weekStart = now()->startOfWeek();
+            $weekEnd = $weekStart->copy()->endOfWeek();
+
+            StaffWeeklyRevenue::calculateWeeklyRevenueForAllStaff($weekStart);
+
+            $this->isCalculating = false;
+
+            session()->flash('success', 'Recettes de la semaine en cours calculées avec succès (' .
+                $weekStart->format('d/m/Y') . ' au ' . $weekEnd->format('d/m/Y') . ').');
+        } catch (\Exception $e) {
+            $this->isCalculating = false;
+            session()->flash('error', 'Erreur lors du calcul: ' . $e->getMessage());
+        }
+    }
+
+    public function calculateLastWeek(): void
+    {
+        $this->isCalculating = true;
+
+        try {
+            $weekStart = now()->subWeek()->startOfWeek();
+            $weekEnd = $weekStart->copy()->endOfWeek();
+
+            StaffWeeklyRevenue::calculateWeeklyRevenueForAllStaff($weekStart);
+
+            $this->isCalculating = false;
+
+            session()->flash('success', 'Recettes de la semaine dernière calculées avec succès (' .
+                $weekStart->format('d/m/Y') . ' au ' . $weekEnd->format('d/m/Y') . ').');
+        } catch (\Exception $e) {
+            $this->isCalculating = false;
+            session()->flash('error', 'Erreur lors du calcul: ' . $e->getMessage());
+        }
     }
 
     public function getStaffShortagesProperty()

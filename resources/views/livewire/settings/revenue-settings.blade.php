@@ -1,7 +1,14 @@
 <div>
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
+            <i class="ni ni-check-bold me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="ni ni-fat-remove me-2"></i>{{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -43,12 +50,35 @@
                 </div>
                 <div class="card-body">
                     <p class="text-sm mb-3">
-                        Cliquez sur le bouton ci-dessous pour calculer les recettes d'une semaine spécifique.
-                        Le système calculera automatiquement les manquants et les surplus.
+                        Utilisez les boutons ci-dessous pour calculer les recettes des coiffeurs et barbiers.
                     </p>
-                    <button class="btn btn-primary" wire:click="openCalculateModal">
-                        <i class="ni ni-ruler-pencil me-1"></i> Calculer une semaine
-                    </button>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        {{-- Bouton semaine dernière --}}
+                        <button class="btn btn-outline-primary" wire:click="calculateLastWeek" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="calculateLastWeek">
+                                <i class="ni ni-bold-left me-1"></i> Semaine Dernière
+                            </span>
+                            <span wire:loading wire:target="calculateLastWeek">
+                                <span class="spinner-border spinner-border-sm me-1"></span> Calcul...
+                            </span>
+                        </button>
+
+                        {{-- Bouton semaine en cours --}}
+                        <button class="btn btn-primary" wire:click="calculateCurrentWeek" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="calculateCurrentWeek">
+                                <i class="ni ni-ruler-pencil me-1"></i> Semaine en Cours
+                            </span>
+                            <span wire:loading wire:target="calculateCurrentWeek">
+                                <span class="spinner-border spinner-border-sm me-1"></span> Calcul...
+                            </span>
+                        </button>
+
+                        {{-- Bouton autre semaine --}}
+                        <button class="btn btn-outline-secondary" wire:click="openCalculateModal" wire:loading.attr="disabled">
+                            <i class="ni ni-calendar-grid-58 me-1"></i> Autre Semaine
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -128,17 +158,28 @@
                             <label class="form-label">Sélectionner une date de la semaine</label>
                             <input type="date" class="form-control form-control-lg" wire:model="calculate_week_start">
                             @error('calculate_week_start') <small class="text-danger">{{ $message }}</small> @enderror
-                            <small class="text-muted">Le système calculera automatiquement pour toute la semaine contenant cette date.</small>
+                            <small class="text-muted d-block mt-2">
+                                <i class="ni ni-bulb-61 me-1"></i>
+                                Le système calculera automatiquement pour toute la semaine contenant cette date (du lundi au dimanche).
+                            </small>
                         </div>
-                        <div class="alert alert-info">
-                            <i class="ni ni-bulb-61 me-2"></i>
+                        <div class="alert alert-info mb-0">
+                            <i class="ni ni-info-circle me-2"></i>
                             <strong>Note :</strong> Cette action calculera les recettes pour tous les coiffeurs et barbiers pour la semaine sélectionnée.
+                            Les données existantes pour cette semaine seront mises à jour.
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="closeCalculateModal">Annuler</button>
-                        <button type="button" class="btn btn-primary" wire:click="calculateWeeklyRevenues">
-                            <i class="ni ni-check-bold me-1"></i> Calculer
+                        <button type="button" class="btn btn-secondary" wire:click="closeCalculateModal" wire:loading.attr="disabled">
+                            Annuler
+                        </button>
+                        <button type="button" class="btn btn-primary" wire:click="calculateWeeklyRevenues" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="calculateWeeklyRevenues">
+                                <i class="ni ni-check-bold me-1"></i> Calculer
+                            </span>
+                            <span wire:loading wire:target="calculateWeeklyRevenues">
+                                <span class="spinner-border spinner-border-sm me-1"></span> Calcul en cours...
+                            </span>
                         </button>
                     </div>
                 </div>

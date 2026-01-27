@@ -52,19 +52,20 @@
                             <div class="position-relative mb-4">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-circle shadow-lg"
                                      style="width: 120px; height: 120px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 3px solid rgba(255,255,255,0.3);">
-                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2Z" fill="white"/>
-                                        <path d="M21 9H15V22H13V16H11V22H9V9H3V7H21V9Z" fill="white"/>
-                                        <path d="M6.5 6.5L3 10M17.5 6.5L21 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                                        <circle cx="6" cy="11" r="2" fill="white"/>
-                                        <circle cx="18" cy="11" r="2" fill="white"/>
-                                    </svg>
+                                    <img src="{{ asset('assets/img/logCobel.png') }}" alt="Salon GoBeL Logo" style="width: 60px; height: 60px; object-fit: contain;">
+{{--                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">--}}
+{{--                                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2Z" fill="white"/>--}}
+{{--                                        <path d="M21 9H15V22H13V16H11V22H9V9H3V7H21V9Z" fill="white"/>--}}
+{{--                                        <path d="M6.5 6.5L3 10M17.5 6.5L21 10" stroke="white" stroke-width="2" stroke-linecap="round"/>--}}
+{{--                                        <circle cx="6" cy="11" r="2" fill="white"/>--}}
+{{--                                        <circle cx="18" cy="11" r="2" fill="white"/>--}}
+{{--                                    </svg>--}}
                                 </div>
                             </div>
 
                             <!-- Nom du salon -->
                             <h1 class="text-white font-weight-bolder position-relative mb-2" style="font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); letter-spacing: 3px;">
-                                SALON GOBEL
+                                Salon GoBeL
                             </h1>
 
                             <!-- Ligne décorative -->

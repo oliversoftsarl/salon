@@ -202,6 +202,16 @@
           <span class="nav-link-text ms-1">Recettes Hebdo</span>
         </a>
       </li>
+
+      {{-- Gestion de la Paie --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('payroll.*') ? 'active' : '' }}" href="{{ route('payroll.index') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-paper-diploma text-info text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Gestion Paie</span>
+        </a>
+      </li>
       @endif
 
       {{-- Section Inventaire pour staff --}}

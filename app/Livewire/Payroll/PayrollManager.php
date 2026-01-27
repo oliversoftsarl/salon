@@ -322,13 +322,19 @@ class PayrollManager extends Component
         $this->validate([
             'selectedStaffId' => 'required|exists:users,id',
             'baseSalary' => 'required|numeric|min:0',
-            'bonus' => 'numeric|min:0',
-            'deductDebts' => 'numeric|min:0',
-            'deductShortage' => 'numeric|min:0',
+            'bonus' => 'nullable|numeric|min:0',
+            'deductDebts' => 'nullable|numeric|min:0',
+            'deductShortage' => 'nullable|numeric|min:0',
             'paymentMethod' => 'required|in:cash,transfer,mobile_money,check',
             'periodStart' => 'required|date',
             'periodEnd' => 'required|date|after_or_equal:periodStart',
         ]);
+
+        // S'assurer que les valeurs numériques sont définies
+        $this->bonus = $this->bonus ?: 0;
+        $this->deductDebts = $this->deductDebts ?: 0;
+        $this->deductShortage = $this->deductShortage ?: 0;
+        $this->calculateNetAmount();
 
         // Générer l'identifiant de période
         $period = $this->paymentType === 'weekly'
@@ -336,7 +342,7 @@ class PayrollManager extends Component
             : Carbon::parse($this->periodStart)->format('Y-m');
 
         // Vérifier si un paiement existe déjà pour cette période
-        if (StaffPayment::existsForPeriod($this->selectedStaffId, $period)) {
+        if (StaffPayment::existsForPeriod((int) $this->selectedStaffId, $period)) {
             session()->flash('error', 'Un paiement existe déjà pour cette période.');
             return;
         }
@@ -355,9 +361,13 @@ class PayrollManager extends Component
 
             $staff = User::find($this->selectedStaffId);
 
+            if (!$staff) {
+                throw new \Exception('Staff non trouvé');
+            }
+
             // Créer le mouvement de caisse
             $cashMovement = CashMovement::create([
-                'date' => now(),
+                'date' => now()->toDateString(),
                 'type' => 'exit',
                 'category' => 'salary_payment',
                 'amount' => $this->netAmount,
@@ -366,7 +376,7 @@ class PayrollManager extends Component
                 'payment_method' => $this->paymentMethod,
                 'user_id' => $this->selectedStaffId,
                 'created_by' => auth()->id(),
-                'notes' => $this->notes,
+                'notes' => $this->notes ?: null,
             ]);
 
             // Préparer les détails des dettes déduites
@@ -392,7 +402,7 @@ class PayrollManager extends Component
             }
 
             // Préparer les détails des manquants déduits
-            $shortageDetails = [];
+            $shortageDetails = null;
             if ($this->deductShortage > 0) {
                 $shortageDetails = [
                     'amount_deducted' => $this->deductShortage,
@@ -402,20 +412,20 @@ class PayrollManager extends Component
 
             // Créer le paiement
             StaffPayment::create([
-                'user_id' => $this->selectedStaffId,
+                'user_id' => (int) $this->selectedStaffId,
                 'payment_type' => $this->paymentType,
-                'base_salary' => $this->baseSalary,
-                'bonus' => $this->bonus,
-                'deductions' => $this->deductDebts,
-                'shortage_deduction' => $this->deductShortage,
-                'net_amount' => $this->netAmount,
+                'base_salary' => (float) $this->baseSalary,
+                'bonus' => (float) $this->bonus,
+                'deductions' => (float) $this->deductDebts,
+                'shortage_deduction' => (float) $this->deductShortage,
+                'net_amount' => (float) $this->netAmount,
                 'period' => $period,
                 'period_start' => $this->periodStart,
                 'period_end' => $this->periodEnd,
-                'payment_date' => now(),
+                'payment_date' => now()->toDateString(),
                 'payment_method' => $this->paymentMethod,
-                'notes' => $this->notes,
-                'debt_details' => $debtDetails,
+                'notes' => $this->notes ?: null,
+                'debt_details' => !empty($debtDetails) ? $debtDetails : null,
                 'shortage_details' => $shortageDetails,
                 'cash_movement_id' => $cashMovement->id,
                 'created_by' => auth()->id(),

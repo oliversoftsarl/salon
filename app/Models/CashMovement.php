@@ -34,6 +34,7 @@ class CashMovement extends Model
         'expense' => 'Dépense générale',
         'bank_deposit' => 'Dépôt banque',
         'salary_advance' => 'Avance sur salaire',
+        'salary_payment' => 'Paiement salaire',
         'staff_loan' => 'Prêt au staff',
         'internal_expense' => 'Dépense interne',
         'purchase' => 'Acquisition/Achat',
@@ -54,7 +55,7 @@ class CashMovement extends Model
 
     // Catégories de sorties
     public static array $exitCategories = [
-        'expense', 'bank_deposit', 'salary_advance', 'staff_loan',
+        'expense', 'bank_deposit', 'salary_advance', 'salary_payment', 'staff_loan',
         'internal_expense', 'purchase', 'supplier_payment'
     ];
 

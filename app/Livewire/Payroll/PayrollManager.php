@@ -1,0 +1,467 @@
+<?php
+
+namespace App\Livewire\Payroll;
+
+use App\Models\CashMovement;
+use App\Models\Setting;
+use App\Models\StaffDebt;
+use App\Models\StaffPayment;
+use App\Models\StaffWeeklyRevenue;
+use App\Models\User;
+use Carbon\Carbon;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+class PayrollManager extends Component
+{
+    use WithPagination;
+
+    public string $search = '';
+    public string $filterType = ''; // weekly, monthly
+    public string $filterPeriod = '';
+
+    // Modal de paiement
+    public bool $showPaymentModal = false;
+    public ?int $selectedStaffId = null;
+    public array $selectedStaff = [];
+    public string $paymentType = 'weekly';
+    public string $periodStart = '';
+    public string $periodEnd = '';
+    public float $baseSalary = 0;
+    public float $bonus = 0;
+    public float $deductDebts = 0;
+    public float $deductShortage = 0;
+    public float $netAmount = 0;
+    public string $paymentMethod = 'cash';
+    public string $notes = '';
+
+    // Données du staff sélectionné
+    public array $staffDebts = [];
+    public array $staffShortages = [];
+    public float $totalDebts = 0;
+    public float $totalShortage = 0;
+    public array $selectedDebtsToDeduct = [];
+
+    // Modal de détails
+    public bool $showDetailsModal = false;
+    public ?StaffPayment $selectedPayment = null;
+
+    protected $queryString = ['search', 'filterType', 'filterPeriod'];
+
+    public function mount(): void
+    {
+        $this->periodStart = now()->startOfWeek()->toDateString();
+        $this->periodEnd = now()->endOfWeek()->toDateString();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSelectedStaffId(): void
+    {
+        if ($this->selectedStaffId) {
+            $this->loadStaffData();
+        } else {
+            $this->resetStaffData();
+        }
+    }
+
+    public function updatedPaymentType(): void
+    {
+        $this->updatePeriodDates();
+        if ($this->selectedStaffId) {
+            $this->loadStaffData();
+        }
+    }
+
+    public function updatedPeriodStart(): void
+    {
+        if ($this->paymentType === 'weekly') {
+            $start = Carbon::parse($this->periodStart)->startOfWeek();
+            $this->periodStart = $start->toDateString();
+            $this->periodEnd = $start->copy()->endOfWeek()->toDateString();
+        } else {
+            $start = Carbon::parse($this->periodStart)->startOfMonth();
+            $this->periodStart = $start->toDateString();
+            $this->periodEnd = $start->copy()->endOfMonth()->toDateString();
+        }
+
+        if ($this->selectedStaffId) {
+            $this->loadStaffShortages();
+        }
+    }
+
+    public function updatedBaseSalary(): void
+    {
+        $this->calculateNetAmount();
+    }
+
+    public function updatedBonus(): void
+    {
+        $this->calculateNetAmount();
+    }
+
+    public function updatedDeductDebts(): void
+    {
+        $this->calculateNetAmount();
+    }
+
+    public function updatedDeductShortage(): void
+    {
+        $this->calculateNetAmount();
+    }
+
+    protected function updatePeriodDates(): void
+    {
+        if ($this->paymentType === 'weekly') {
+            $this->periodStart = now()->startOfWeek()->toDateString();
+            $this->periodEnd = now()->endOfWeek()->toDateString();
+        } else {
+            $this->periodStart = now()->startOfMonth()->toDateString();
+            $this->periodEnd = now()->endOfMonth()->toDateString();
+        }
+    }
+
+    protected function loadStaffData(): void
+    {
+        $staff = User::with('staffProfile')->find($this->selectedStaffId);
+
+        if (!$staff) {
+            $this->resetStaffData();
+            return;
+        }
+
+        $this->selectedStaff = [
+            'id' => $staff->id,
+            'name' => $staff->name,
+            'role' => $staff->staffProfile?->role_title ?? 'Non défini',
+            'hourly_rate' => $staff->staffProfile?->hourly_rate ?? 0,
+        ];
+
+        // Déterminer le type de paiement en fonction du rôle
+        $roleTitle = strtolower($staff->staffProfile?->role_title ?? '');
+        $isWeeklyPaid = str_contains($roleTitle, 'coiffeur') ||
+                        str_contains($roleTitle, 'coiffeuse') ||
+                        str_contains($roleTitle, 'barbier');
+
+        $this->paymentType = $isWeeklyPaid ? 'weekly' : 'monthly';
+        $this->updatePeriodDates();
+
+        // Charger les dettes
+        $this->loadStaffDebts();
+
+        // Charger les manquants (seulement pour les coiffeurs/barbiers)
+        $this->loadStaffShortages();
+
+        // Définir le salaire de base
+        $this->baseSalary = $staff->staffProfile?->hourly_rate ?? 0;
+
+        $this->calculateNetAmount();
+    }
+
+    protected function loadStaffDebts(): void
+    {
+        $debts = StaffDebt::where('user_id', $this->selectedStaffId)
+            ->whereIn('status', ['pending', 'partial'])
+            ->orderBy('debt_date')
+            ->get();
+
+        $this->staffDebts = $debts->map(function ($debt) {
+            return [
+                'id' => $debt->id,
+                'type' => $debt->type,
+                'type_label' => StaffDebt::$typeLabels[$debt->type] ?? $debt->type,
+                'amount' => $debt->amount,
+                'paid_amount' => $debt->paid_amount,
+                'remaining' => $debt->amount - $debt->paid_amount,
+                'date' => $debt->debt_date->format('d/m/Y'),
+                'description' => $debt->description,
+            ];
+        })->toArray();
+
+        $this->totalDebts = collect($this->staffDebts)->sum('remaining');
+        $this->selectedDebtsToDeduct = [];
+        $this->deductDebts = 0;
+    }
+
+    protected function loadStaffShortages(): void
+    {
+        $staff = User::with('staffProfile')->find($this->selectedStaffId);
+        $roleTitle = strtolower($staff->staffProfile?->role_title ?? '');
+
+        // Seulement pour les coiffeurs/barbiers
+        if (!str_contains($roleTitle, 'coiffeur') &&
+            !str_contains($roleTitle, 'coiffeuse') &&
+            !str_contains($roleTitle, 'barbier')) {
+            $this->staffShortages = [];
+            $this->totalShortage = 0;
+            return;
+        }
+
+        $shortages = StaffWeeklyRevenue::where('staff_id', $this->selectedStaffId)
+            ->where('difference', '<', 0)
+            ->orderByDesc('year')
+            ->orderByDesc('week_number')
+            ->limit(10)
+            ->get();
+
+        $this->staffShortages = $shortages->map(function ($shortage) {
+            return [
+                'id' => $shortage->id,
+                'week' => 'Semaine ' . $shortage->week_number . ' (' . $shortage->week_start->format('d/m') . ' - ' . $shortage->week_end->format('d/m') . ')',
+                'target' => $shortage->target_amount,
+                'actual' => $shortage->actual_amount,
+                'shortage' => abs($shortage->difference),
+                'cumulative' => $shortage->cumulative_shortage,
+            ];
+        })->toArray();
+
+        $this->totalShortage = StaffWeeklyRevenue::getTotalShortage($this->selectedStaffId);
+        $this->deductShortage = 0;
+    }
+
+    protected function resetStaffData(): void
+    {
+        $this->selectedStaff = [];
+        $this->staffDebts = [];
+        $this->staffShortages = [];
+        $this->totalDebts = 0;
+        $this->totalShortage = 0;
+        $this->baseSalary = 0;
+        $this->bonus = 0;
+        $this->deductDebts = 0;
+        $this->deductShortage = 0;
+        $this->netAmount = 0;
+        $this->selectedDebtsToDeduct = [];
+    }
+
+    protected function calculateNetAmount(): void
+    {
+        $this->netAmount = max(0, $this->baseSalary + $this->bonus - $this->deductDebts - $this->deductShortage);
+    }
+
+    public function toggleDebtSelection(int $debtId): void
+    {
+        if (in_array($debtId, $this->selectedDebtsToDeduct)) {
+            $this->selectedDebtsToDeduct = array_diff($this->selectedDebtsToDeduct, [$debtId]);
+        } else {
+            $this->selectedDebtsToDeduct[] = $debtId;
+        }
+
+        // Recalculer le montant des dettes à déduire
+        $this->deductDebts = collect($this->staffDebts)
+            ->whereIn('id', $this->selectedDebtsToDeduct)
+            ->sum('remaining');
+
+        $this->calculateNetAmount();
+    }
+
+    public function selectAllDebts(): void
+    {
+        $this->selectedDebtsToDeduct = collect($this->staffDebts)->pluck('id')->toArray();
+        $this->deductDebts = $this->totalDebts;
+        $this->calculateNetAmount();
+    }
+
+    public function deselectAllDebts(): void
+    {
+        $this->selectedDebtsToDeduct = [];
+        $this->deductDebts = 0;
+        $this->calculateNetAmount();
+    }
+
+    public function applyFullShortageDeduction(): void
+    {
+        $this->deductShortage = min($this->totalShortage, $this->baseSalary + $this->bonus - $this->deductDebts);
+        $this->calculateNetAmount();
+    }
+
+    public function openPaymentModal(): void
+    {
+        $this->resetStaffData();
+        $this->selectedStaffId = null;
+        $this->paymentType = 'weekly';
+        $this->updatePeriodDates();
+        $this->notes = '';
+        $this->paymentMethod = 'cash';
+        $this->showPaymentModal = true;
+    }
+
+    public function closePaymentModal(): void
+    {
+        $this->showPaymentModal = false;
+        $this->resetStaffData();
+    }
+
+    public function processPayment(): void
+    {
+        $this->validate([
+            'selectedStaffId' => 'required|exists:users,id',
+            'baseSalary' => 'required|numeric|min:0',
+            'bonus' => 'numeric|min:0',
+            'deductDebts' => 'numeric|min:0',
+            'deductShortage' => 'numeric|min:0',
+            'paymentMethod' => 'required|in:cash,transfer,mobile_money,check',
+            'periodStart' => 'required|date',
+            'periodEnd' => 'required|date|after_or_equal:periodStart',
+        ]);
+
+        // Générer l'identifiant de période
+        $period = $this->paymentType === 'weekly'
+            ? Carbon::parse($this->periodStart)->format('Y-\WW')
+            : Carbon::parse($this->periodStart)->format('Y-m');
+
+        // Vérifier si un paiement existe déjà pour cette période
+        if (StaffPayment::existsForPeriod($this->selectedStaffId, $period)) {
+            session()->flash('error', 'Un paiement existe déjà pour cette période.');
+            return;
+        }
+
+        // Vérifier le solde de la caisse
+        $currentBalance = CashMovement::selectRaw('SUM(CASE WHEN type = "entry" THEN amount ELSE -amount END) as balance')
+            ->value('balance') ?? 0;
+
+        if ($this->netAmount > $currentBalance) {
+            session()->flash('error', 'Solde de caisse insuffisant. Solde actuel: ' . number_format($currentBalance, 0, ',', ' ') . ' FC');
+            return;
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $staff = User::find($this->selectedStaffId);
+
+            // Créer le mouvement de caisse
+            $cashMovement = CashMovement::create([
+                'date' => now(),
+                'type' => 'exit',
+                'category' => 'salary_payment',
+                'amount' => $this->netAmount,
+                'description' => 'Paiement salaire ' . ($this->paymentType === 'weekly' ? 'hebdomadaire' : 'mensuel') . ' - ' . $staff->name,
+                'reference' => 'SAL-' . now()->format('YmdHis'),
+                'payment_method' => $this->paymentMethod,
+                'user_id' => $this->selectedStaffId,
+                'created_by' => auth()->id(),
+                'notes' => $this->notes,
+            ]);
+
+            // Préparer les détails des dettes déduites
+            $debtDetails = [];
+            if (!empty($this->selectedDebtsToDeduct)) {
+                foreach ($this->selectedDebtsToDeduct as $debtId) {
+                    $debt = StaffDebt::find($debtId);
+                    if ($debt) {
+                        $remaining = $debt->amount - $debt->paid_amount;
+                        $debtDetails[] = [
+                            'debt_id' => $debt->id,
+                            'type' => $debt->type,
+                            'amount_deducted' => $remaining,
+                            'description' => $debt->description,
+                        ];
+
+                        // Mettre à jour la dette
+                        $debt->paid_amount = $debt->amount;
+                        $debt->status = 'paid';
+                        $debt->save();
+                    }
+                }
+            }
+
+            // Préparer les détails des manquants déduits
+            $shortageDetails = [];
+            if ($this->deductShortage > 0) {
+                $shortageDetails = [
+                    'amount_deducted' => $this->deductShortage,
+                    'total_shortage_before' => $this->totalShortage,
+                ];
+            }
+
+            // Créer le paiement
+            StaffPayment::create([
+                'user_id' => $this->selectedStaffId,
+                'payment_type' => $this->paymentType,
+                'base_salary' => $this->baseSalary,
+                'bonus' => $this->bonus,
+                'deductions' => $this->deductDebts,
+                'shortage_deduction' => $this->deductShortage,
+                'net_amount' => $this->netAmount,
+                'period' => $period,
+                'period_start' => $this->periodStart,
+                'period_end' => $this->periodEnd,
+                'payment_date' => now(),
+                'payment_method' => $this->paymentMethod,
+                'notes' => $this->notes,
+                'debt_details' => $debtDetails,
+                'shortage_details' => $shortageDetails,
+                'cash_movement_id' => $cashMovement->id,
+                'created_by' => auth()->id(),
+            ]);
+
+            \DB::commit();
+
+            $this->closePaymentModal();
+            session()->flash('success', 'Paiement de ' . number_format($this->netAmount, 0, ',', ' ') . ' FC effectué avec succès pour ' . $staff->name);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            session()->flash('error', 'Erreur lors du paiement: ' . $e->getMessage());
+        }
+    }
+
+    public function showPaymentDetails(int $paymentId): void
+    {
+        $this->selectedPayment = StaffPayment::with(['user', 'user.staffProfile', 'cashMovement', 'creator'])->find($paymentId);
+        $this->showDetailsModal = true;
+    }
+
+    public function closeDetailsModal(): void
+    {
+        $this->showDetailsModal = false;
+        $this->selectedPayment = null;
+    }
+
+    public function getStaffListProperty()
+    {
+        return User::whereHas('staffProfile')
+            ->with('staffProfile')
+            ->where('active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getPaymentsProperty()
+    {
+        return StaffPayment::with(['user', 'user.staffProfile', 'creator'])
+            ->when($this->search, function ($query) {
+                $query->whereHas('user', function ($q) {
+                    $q->where('name', 'like', '%' . $this->search . '%');
+                });
+            })
+            ->when($this->filterType, function ($query) {
+                $query->where('payment_type', $this->filterType);
+            })
+            ->when($this->filterPeriod, function ($query) {
+                $query->where('period', 'like', '%' . $this->filterPeriod . '%');
+            })
+            ->orderByDesc('payment_date')
+            ->paginate(15);
+    }
+
+    public function getTotalPaidThisMonthProperty(): float
+    {
+        return StaffPayment::whereMonth('payment_date', now()->month)
+            ->whereYear('payment_date', now()->year)
+            ->sum('net_amount');
+    }
+
+    public function render()
+    {
+        return view('livewire.payroll.payroll-manager', [
+            'staffList' => $this->staffList,
+            'payments' => $this->payments,
+            'totalPaidThisMonth' => $this->totalPaidThisMonth,
+        ])->layout('layouts.main', ['title' => 'Gestion de la Paie']);
+    }
+}

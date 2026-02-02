@@ -143,8 +143,8 @@ jobs:
 
             # Executer les seeders si nécessaire
             # echo "🌱 Seeding database..."
-            php artisan db:seed --class=RolesAndPermissionsSeeder
-            php artisan users:sync-roles
+            php artisan db:seed --class=RolesAndPermissionsSeeder --force || true
+            php artisan users:sync-roles || true
 
             # Afficher le statut des migrations
             echo "📋 Migration status:"

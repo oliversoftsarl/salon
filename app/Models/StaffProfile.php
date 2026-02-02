@@ -10,6 +10,7 @@ class StaffProfile extends Model
         'user_id',
         'display_name',
         'role_title',
+        'phone',
         'hourly_rate',
         'availability',
     ];

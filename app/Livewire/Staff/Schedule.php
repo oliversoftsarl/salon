@@ -23,6 +23,7 @@ class Schedule extends Component
     // Profile edit form
     public string $edit_display_name = '';
     public string $edit_role_title = '';
+    public string $edit_phone = '';
     public string $edit_hourly_rate = '';
     public bool $showProfileModal = false;
 
@@ -142,11 +143,13 @@ class Schedule extends Component
         if ($profile) {
             $this->edit_display_name = $profile->display_name;
             $this->edit_role_title = $profile->role_title;
+            $this->edit_phone = $profile->phone ?? '';
             $this->edit_hourly_rate = (string) $profile->hourly_rate;
         } else {
             $user = User::find($this->selected_user_id);
             $this->edit_display_name = $user?->name ?? 'Staff';
             $this->edit_role_title = 'Coiffeur/Coiffeuse';
+            $this->edit_phone = '';
             $this->edit_hourly_rate = '0';
         }
         $this->showProfileModal = true;
@@ -163,6 +166,7 @@ class Schedule extends Component
         $this->validate([
             'edit_display_name' => ['required', 'string', 'max:255'],
             'edit_role_title' => ['required', 'string', 'max:255'],
+            'edit_phone' => ['nullable', 'string', 'max:20'],
             'edit_hourly_rate' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -171,6 +175,7 @@ class Schedule extends Component
             [
                 'display_name' => $this->edit_display_name,
                 'role_title' => $this->edit_role_title,
+                'phone' => $this->edit_phone ?: null,
                 'hourly_rate' => $this->edit_hourly_rate,
             ]
         );

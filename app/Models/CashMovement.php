@@ -33,12 +33,20 @@ class CashMovement extends Model
         // Sorties
         'expense' => 'Dépense générale',
         'bank_deposit' => 'Dépôt banque',
-        'salary_advance' => 'Avance sur salaire',
         'salary_payment' => 'Paiement salaire',
-        'staff_loan' => 'Prêt au staff',
-        'internal_expense' => 'Dépense interne',
         'purchase' => 'Acquisition/Achat',
         'supplier_payment' => 'Paiement fournisseur',
+        'tax' => 'Impôt et Taxes',
+        'rent' => 'Paiement Loyer',
+        'socode_electricity' => 'Paiement SOCODE / Electricité',
+        'snel_electricity' => 'Paiement SNEL / Electricité',
+        'regideso' => 'Paiement Regideso',
+        'security' => 'Paiement Gardien / Sécurité',
+        'plumber' => 'Paiement Plombier',
+        'electrician' => 'Paiement Electricien',
+        'internet' => 'Paiement Internet',
+        'water_punctual' => 'Paiement Eau/Ponctuelle',
+        'other_exit' => 'Autre',
     ];
 
     // Labels pour les méthodes de paiement
@@ -55,8 +63,9 @@ class CashMovement extends Model
 
     // Catégories de sorties
     public static array $exitCategories = [
-        'expense', 'bank_deposit', 'salary_advance', 'salary_payment', 'staff_loan',
-        'internal_expense', 'purchase', 'supplier_payment'
+        'expense', 'bank_deposit', 'salary_payment', 'purchase', 'supplier_payment',
+        'tax', 'rent', 'socode_electricity', 'snel_electricity', 'regideso',
+        'security', 'plumber', 'electrician', 'internet', 'water_punctual', 'other_exit'
     ];
 
     // Relations

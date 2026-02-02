@@ -3,8 +3,6 @@
 namespace App\Livewire\Cash;
 
 use App\Models\CashMovement;
-use App\Models\StaffDebt;
-use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -189,13 +187,6 @@ class Register extends Component
     {
         $this->validate();
 
-        // Validation supplémentaire pour avance sur salaire ou prêt au staff
-        $staffCategories = ['salary_advance', 'staff_loan'];
-        if (in_array($this->form_category, $staffCategories) && !$this->form_user_id) {
-            $this->addError('form_user_id', 'Veuillez sélectionner un employé.');
-            return;
-        }
-
         $data = [
             'type' => $this->form_type,
             'category' => $this->form_category,
@@ -204,76 +195,19 @@ class Register extends Component
             'description' => $this->form_description,
             'reference' => $this->form_reference ?: null,
             'payment_method' => $this->form_payment_method,
-            'user_id' => in_array($this->form_category, $staffCategories) ? $this->form_user_id : null,
+            'user_id' => $this->form_user_id ?: null,
             'notes' => $this->form_notes ?: null,
             'created_by' => auth()->id(),
-        ];
-
-        // Déterminer le type de dette selon la catégorie
-        $debtTypeMap = [
-            'salary_advance' => 'advance',
-            'staff_loan' => 'loan',
         ];
 
         DB::beginTransaction();
         try {
             if ($this->editingId) {
                 $movement = CashMovement::findOrFail($this->editingId);
-                $oldCategory = $movement->category;
-                $oldUserId = $movement->user_id;
-                $oldAmount = $movement->amount;
-
                 $movement->update($data);
-
-                // Si c'était une catégorie liée au staff, mettre à jour la dette associée
-                if (in_array($oldCategory, $staffCategories) && $oldUserId) {
-                    $oldDebtType = $debtTypeMap[$oldCategory] ?? 'loan';
-                    $debt = StaffDebt::where('user_id', $oldUserId)
-                        ->where('type', $oldDebtType)
-                        ->where('amount', $oldAmount)
-                        ->where('description', 'like', '%Mouvement caisse #' . $this->editingId . '%')
-                        ->first();
-
-                    if ($debt) {
-                        if (in_array($this->form_category, $staffCategories)) {
-                            // Mettre à jour la dette existante
-                            $newDebtType = $debtTypeMap[$this->form_category] ?? 'loan';
-                            $debt->update([
-                                'user_id' => $this->form_user_id,
-                                'type' => $newDebtType,
-                                'amount' => $this->form_amount,
-                                'debt_date' => $this->form_date,
-                                'description' => $this->form_description . ' (Mouvement caisse #' . $movement->id . ')',
-                            ]);
-                        } else {
-                            // Ce n'est plus une catégorie staff, annuler la dette si pas de paiement
-                            if ($debt->paid_amount == 0) {
-                                $debt->update(['status' => 'cancelled']);
-                            }
-                        }
-                    }
-                }
-
                 session()->flash('success', 'Mouvement modifié avec succès.');
             } else {
-                $movement = CashMovement::create($data);
-
-                // Créer automatiquement une dette pour les catégories liées au staff
-                if (in_array($this->form_category, $staffCategories) && $this->form_user_id) {
-                    $debtType = $debtTypeMap[$this->form_category] ?? 'loan';
-                    StaffDebt::create([
-                        'user_id' => $this->form_user_id,
-                        'type' => $debtType,
-                        'amount' => $this->form_amount,
-                        'paid_amount' => 0,
-                        'description' => $this->form_description . ' (Mouvement caisse #' . $movement->id . ')',
-                        'debt_date' => $this->form_date,
-                        'status' => 'pending',
-                        'created_by' => auth()->id(),
-                        'notes' => 'Créé automatiquement depuis la gestion de caisse',
-                    ]);
-                }
-
+                CashMovement::create($data);
                 session()->flash('success', 'Mouvement enregistré avec succès.');
             }
 

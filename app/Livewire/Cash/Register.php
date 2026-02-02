@@ -83,6 +83,23 @@ class Register extends Component
         $this->resetPage();
     }
 
+    public function updatedFilterType($value): void
+    {
+        // Réinitialiser le filtre de catégorie quand on change le type
+        $this->filter_category = '';
+        $this->resetPage();
+    }
+
+    public function updatedFilterCategory(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedFormType($value): void
     {
         // Réinitialiser la catégorie selon le type
@@ -155,6 +172,17 @@ class Register extends Component
             ->where('active', true)
             ->orderBy('name')
             ->get(['id', 'name']);
+    }
+
+    public function getFilteredCategoriesProperty(): array
+    {
+        if ($this->filter_type === 'entry') {
+            return CashMovement::$entryCategories;
+        } elseif ($this->filter_type === 'exit') {
+            return CashMovement::$exitCategories;
+        }
+        // Si "all", retourner toutes les catégories
+        return array_merge(CashMovement::$entryCategories, CashMovement::$exitCategories);
     }
 
     public function openForm(string $type = 'exit'): void
@@ -266,6 +294,7 @@ class Register extends Component
             'paymentMethodLabels' => CashMovement::$paymentMethodLabels,
             'entryCategories' => CashMovement::$entryCategories,
             'exitCategories' => CashMovement::$exitCategories,
+            'filteredCategories' => $this->filteredCategories,
         ])->layout('layouts.main', ['title' => 'Gestion de Caisse']);
     }
 }

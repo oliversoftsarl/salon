@@ -68,16 +68,26 @@
                     <label class="form-label">Catégorie</label>
                     <select class="form-select" wire:model.live="filter_category">
                         <option value="">Toutes</option>
-                        <optgroup label="Entrées">
+                        @if($filter_type === 'all')
+                            <optgroup label="Entrées">
+                                @foreach($entryCategories as $cat)
+                                    <option value="{{ $cat }}">{{ $categoryLabels[$cat] ?? $cat }}</option>
+                                @endforeach
+                            </optgroup>
+                            <optgroup label="Sorties">
+                                @foreach($exitCategories as $cat)
+                                    <option value="{{ $cat }}">{{ $categoryLabels[$cat] ?? $cat }}</option>
+                                @endforeach
+                            </optgroup>
+                        @elseif($filter_type === 'entry')
                             @foreach($entryCategories as $cat)
-                                <option value="{{ $cat }}">{{ $categoryLabels[$cat] }}</option>
+                                <option value="{{ $cat }}">{{ $categoryLabels[$cat] ?? $cat }}</option>
                             @endforeach
-                        </optgroup>
-                        <optgroup label="Sorties">
+                        @else
                             @foreach($exitCategories as $cat)
-                                <option value="{{ $cat }}">{{ $categoryLabels[$cat] }}</option>
+                                <option value="{{ $cat }}">{{ $categoryLabels[$cat] ?? $cat }}</option>
                             @endforeach
-                        </optgroup>
+                        @endif
                     </select>
                 </div>
                 {{-- Recherche --}}

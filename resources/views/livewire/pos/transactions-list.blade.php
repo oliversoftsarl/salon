@@ -89,6 +89,9 @@
                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end d-none d-lg-table-cell" style="width: 80px;">PU</th>
                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 50px;">Qté</th>
                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end pe-3" style="width: 90px;">Total</th>
+                        @if(auth()->user()->role === 'admin')
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 70px;">Actions</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -143,10 +146,17 @@
                         <td class="text-end pe-3">
                             <span class="text-sm font-weight-bold">{{ number_format($it->line_total, 0, ',', ' ') }} FC</span>
                         </td>
+                        @if(auth()->user()->role === 'admin')
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="confirmDeleteItem({{ $it->id }})" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        @endif
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
+                        <td colspan="{{ auth()->user()->role === 'admin' ? 8 : 7 }}" class="text-center py-4 text-muted">
                             <i class="ni ni-cart" style="font-size: 32px;"></i>
                             <p class="mt-2 mb-0">Aucune transaction trouvée</p>
                         </td>
@@ -159,5 +169,41 @@
             {{ $items->links() }}
         </div>
     </div>
+
+    {{-- Modal de confirmation de suppression (Admin uniquement) --}}
+    @if($showDeleteModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-danger">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-trash me-2"></i>Confirmer la suppression
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeDeleteModal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 64px;"></i>
+                        </div>
+                        <h5>Êtes-vous sûr de vouloir supprimer cet article ?</h5>
+                        <p class="text-muted mb-3">{{ $deletingItemInfo }}</p>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Attention :</strong><br>
+                            <small>Le stock sera restauré pour les produits. Les totaux de la transaction et de la caisse seront mis à jour.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" wire:click="closeDeleteModal">
+                            <i class="fas fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteItem">
+                            <i class="fas fa-trash me-2"></i>Oui, supprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 

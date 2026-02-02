@@ -508,6 +508,214 @@ class PayrollManager extends Component
         $this->selectedPayment = null;
     }
 
+    // Modal d'édition
+    public bool $showEditModal = false;
+    public ?int $editingPaymentId = null;
+    public float $editBaseSalary = 0;
+    public float $editBonus = 0;
+    public float $editDeductions = 0;
+    public float $editShortageDeduction = 0;
+    public string $editPaymentMethod = 'cash';
+    public string $editNotes = '';
+
+    // Modal de confirmation de suppression
+    public bool $showDeleteModal = false;
+    public ?int $deletingPaymentId = null;
+    public ?string $deletingPaymentInfo = null;
+
+    /**
+     * Ouvre le modal d'édition d'un paiement (admin uniquement)
+     */
+    public function openEditModal(int $paymentId): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour modifier un paiement.');
+            return;
+        }
+
+        $payment = StaffPayment::with('user')->find($paymentId);
+
+        if (!$payment) {
+            session()->flash('error', 'Paiement non trouvé.');
+            return;
+        }
+
+        $this->editingPaymentId = $payment->id;
+        $this->editBaseSalary = (float) $payment->base_salary;
+        $this->editBonus = (float) $payment->bonus;
+        $this->editDeductions = (float) $payment->deductions;
+        $this->editShortageDeduction = (float) $payment->shortage_deduction;
+        $this->editPaymentMethod = $payment->payment_method;
+        $this->editNotes = $payment->notes ?? '';
+        $this->showEditModal = true;
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editingPaymentId = null;
+        $this->editBaseSalary = 0;
+        $this->editBonus = 0;
+        $this->editDeductions = 0;
+        $this->editShortageDeduction = 0;
+        $this->editPaymentMethod = 'cash';
+        $this->editNotes = '';
+    }
+
+    /**
+     * Met à jour un paiement (admin uniquement)
+     */
+    public function updatePayment(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour modifier un paiement.');
+            return;
+        }
+
+        $this->validate([
+            'editBaseSalary' => 'required|numeric|min:0',
+            'editBonus' => 'nullable|numeric|min:0',
+            'editDeductions' => 'nullable|numeric|min:0',
+            'editShortageDeduction' => 'nullable|numeric|min:0',
+            'editPaymentMethod' => 'required|in:cash,transfer,mobile_money,check',
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            $payment = StaffPayment::find($this->editingPaymentId);
+
+            if (!$payment) {
+                throw new \Exception('Paiement non trouvé');
+            }
+
+            $oldNetAmount = $payment->net_amount;
+            $newNetAmount = max(0, $this->editBaseSalary + $this->editBonus - $this->editDeductions - $this->editShortageDeduction);
+            $difference = $newNetAmount - $oldNetAmount;
+
+            // Mettre à jour le paiement
+            $payment->update([
+                'base_salary' => $this->editBaseSalary,
+                'bonus' => $this->editBonus ?: 0,
+                'deductions' => $this->editDeductions ?: 0,
+                'shortage_deduction' => $this->editShortageDeduction ?: 0,
+                'net_amount' => $newNetAmount,
+                'payment_method' => $this->editPaymentMethod,
+                'notes' => $this->editNotes ?: null,
+            ]);
+
+            // Mettre à jour le mouvement de caisse associé si le montant a changé
+            if ($payment->cash_movement_id && $difference != 0) {
+                $cashMovement = CashMovement::find($payment->cash_movement_id);
+                if ($cashMovement) {
+                    $cashMovement->update([
+                        'amount' => $newNetAmount,
+                        'payment_method' => $this->editPaymentMethod,
+                        'notes' => ($this->editNotes ? $this->editNotes . ' ' : '') . '(Modifié le ' . now()->format('d/m/Y H:i') . ')',
+                    ]);
+                }
+            }
+
+            \DB::commit();
+
+            $this->closeEditModal();
+            session()->flash('success', 'Paiement modifié avec succès.');
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            session()->flash('error', 'Erreur lors de la modification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Ouvre le modal de confirmation de suppression (admin uniquement)
+     */
+    public function confirmDelete(int $paymentId): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer un paiement.');
+            return;
+        }
+
+        $payment = StaffPayment::with('user')->find($paymentId);
+
+        if (!$payment) {
+            session()->flash('error', 'Paiement non trouvé.');
+            return;
+        }
+
+        $this->deletingPaymentId = $payment->id;
+        $this->deletingPaymentInfo = $payment->user->name . ' - ' . number_format($payment->net_amount, 0, ',', ' ') . ' FC (' . $payment->payment_date->format('d/m/Y') . ')';
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingPaymentId = null;
+        $this->deletingPaymentInfo = null;
+    }
+
+    /**
+     * Supprime un paiement (admin uniquement)
+     */
+    public function deletePayment(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer un paiement.');
+            return;
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $payment = StaffPayment::find($this->deletingPaymentId);
+
+            if (!$payment) {
+                throw new \Exception('Paiement non trouvé');
+            }
+
+            // Supprimer le mouvement de caisse associé
+            if ($payment->cash_movement_id) {
+                CashMovement::where('id', $payment->cash_movement_id)->delete();
+            }
+
+            // Restaurer les dettes si elles avaient été marquées comme payées
+            if ($payment->debt_details) {
+                $debtDetails = is_array($payment->debt_details) ? $payment->debt_details : json_decode($payment->debt_details, true);
+                foreach ($debtDetails as $debtDetail) {
+                    $debt = StaffDebt::find($debtDetail['debt_id'] ?? null);
+                    if ($debt) {
+                        $debt->paid_amount = max(0, $debt->paid_amount - ($debtDetail['amount_deducted'] ?? 0));
+                        $debt->status = $debt->paid_amount >= $debt->amount ? 'paid' : ($debt->paid_amount > 0 ? 'partial' : 'pending');
+                        $debt->save();
+                    }
+                }
+            }
+
+            // Supprimer le paiement
+            $payment->delete();
+
+            \DB::commit();
+
+            $this->closeDeleteModal();
+            session()->flash('success', 'Paiement supprimé avec succès. Le mouvement de caisse associé a également été supprimé.');
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            session()->flash('error', 'Erreur lors de la suppression: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Vérifie si l'utilisateur actuel est un administrateur
+     */
+    protected function isAdmin(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->role === 'admin';
+    }
+
     public function getStaffListProperty()
     {
         return User::whereHas('staffProfile')

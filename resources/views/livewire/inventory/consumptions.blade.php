@@ -110,6 +110,9 @@
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-md-table-cell" style="width: 70px;">Restant</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Staff</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-xl-table-cell">Notes</th>
+                                    @if(auth()->user()->role === 'admin')
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 90px;">Actions</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -145,10 +148,20 @@
                                         <td class="d-none d-xl-table-cell">
                                             <span class="text-xs text-truncate d-inline-block" style="max-width: 120px;" title="{{ $c->notes }}">{{ $c->notes }}</span>
                                         </td>
+                                        @if(auth()->user()->role === 'admin')
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-warning px-2 py-1" wire:click="openEditModal({{ $c->id }})" title="Modifier">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="confirmDelete({{ $c->id }})" title="Supprimer">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">Aucune consommation</td>
+                                        <td colspan="{{ auth()->user()->role === 'admin' ? 7 : 6 }}" class="text-center py-4 text-muted">Aucune consommation</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -162,4 +175,101 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal d'édition (Admin uniquement) --}}
+    @if($showEditModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-warning">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-edit me-2"></i>Modifier la consommation
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeEditModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Produit</label>
+                            <select class="form-select" wire:model="edit_product_id">
+                                <option value="">— Sélectionner —</option>
+                                @foreach($products as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('edit_product_id') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Quantité utilisée</label>
+                                <input type="number" min="1" class="form-control" wire:model="edit_quantity_used">
+                                @error('edit_quantity_used') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" wire:model="edit_used_at">
+                                @error('edit_used_at') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Staff</label>
+                            <select class="form-select" wire:model="edit_staff_id">
+                                <option value="">— Non attribué —</option>
+                                @foreach($staff as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" rows="2" wire:model="edit_notes"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeEditModal">Annuler</button>
+                        <button type="button" class="btn btn-warning" wire:click="updateConsumption">
+                            <i class="fas fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal de confirmation de suppression (Admin uniquement) --}}
+    @if($showDeleteModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-danger">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-trash me-2"></i>Confirmer la suppression
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeDeleteModal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 64px;"></i>
+                        </div>
+                        <h5>Êtes-vous sûr de vouloir supprimer cette consommation ?</h5>
+                        <p class="text-muted mb-3">{{ $deletingInfo }}</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Le stock sera automatiquement restauré.
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" wire:click="closeDeleteModal">
+                            <i class="fas fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteConsumption">
+                            <i class="fas fa-trash me-2"></i>Oui, supprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

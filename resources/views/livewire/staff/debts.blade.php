@@ -232,15 +232,17 @@
                             </td>
                             <td class="text-end pe-3">
                                 <div class="btn-group">
-                                    @if($debt->status !== 'paid' && $debt->status !== 'cancelled')
-                                        <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="openDebtForm({{ $debt->id }})" title="Modifier">
-                                            <i class="ni ni-ruler-pencil"></i>
-                                        </button>
-                                    @endif
-                                    @if($debt->paid_amount == 0 && $debt->status !== 'cancelled')
-                                        <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="cancelDebt({{ $debt->id }})" onclick="return confirm('Supprimer cette dette ?')" title="Supprimer">
-                                            <i class="ni ni-fat-remove"></i>
-                                        </button>
+                                    @if(auth()->user()->role === 'admin')
+                                        @if($debt->status !== 'paid' && $debt->status !== 'cancelled')
+                                            <button class="btn btn-sm btn-outline-warning px-2 py-1" wire:click="openDebtForm({{ $debt->id }})" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        @endif
+                                        @if($debt->paid_amount == 0 && $debt->status !== 'cancelled')
+                                            <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="cancelDebt({{ $debt->id }})" onclick="return confirm('Annuler cette dette ?')" title="Annuler">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
                                     @endif
                                 </div>
                             </td>

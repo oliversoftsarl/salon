@@ -2,10 +2,14 @@
 
 namespace App\Livewire\Pos;
 
+use App\Models\CashMovement;
+use App\Models\Product;
+use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -19,6 +23,11 @@ class TransactionsList extends Component
     public ?string $date_to = null;
     public string $search = '';
     public ?int $stylist_id = null;     // Filtre par prestataire
+
+    // Modal de suppression (Admin uniquement)
+    public bool $showDeleteModal = false;
+    public ?int $deletingItemId = null;
+    public ?string $deletingItemInfo = null;
 
     protected $queryString = [
         'filter_type' => ['except' => 'all'],
@@ -155,5 +164,90 @@ class TransactionsList extends Component
                        ->orWhereHas('service', fn($s) => $s->where('name', 'like', $term));
                 });
             });
+    }
+
+    public function confirmDeleteItem(int $id): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer une vente.');
+            return;
+        }
+
+        $item = TransactionItem::with(['product', 'service', 'transaction'])->find($id);
+        if (!$item) {
+            session()->flash('error', 'Article non trouvé.');
+            return;
+        }
+
+        $articleName = $item->product_id
+            ? ($item->product->name ?? 'Produit #' . $item->product_id)
+            : ($item->service->name ?? 'Service #' . $item->service_id);
+
+        $this->deletingItemId = $item->id;
+        $this->deletingItemInfo = $articleName . ' - ' . number_format($item->line_total, 0, ',', ' ') . ' FC (' . optional($item->transaction)->created_at?->format('d/m/Y') . ')';
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingItemId = null;
+        $this->deletingItemInfo = null;
+    }
+
+    public function deleteItem(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer une vente.');
+            return;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $item = TransactionItem::with('transaction')->findOrFail($this->deletingItemId);
+            $transaction = $item->transaction;
+
+            // Si c'est un produit, restaurer le stock
+            if ($item->product_id) {
+                Product::where('id', $item->product_id)->increment('stock_quantity', $item->quantity);
+            }
+
+            $lineTotal = $item->line_total;
+
+            // Supprimer l'article
+            $item->delete();
+
+            // Mettre à jour le total de la transaction
+            if ($transaction) {
+                $newTotal = $transaction->items()->sum('line_total');
+                $transaction->update(['total' => $newTotal]);
+
+                // Si la transaction n'a plus d'articles, la supprimer
+                if ($transaction->items()->count() === 0) {
+                    // Supprimer le mouvement de caisse associé
+                    CashMovement::where('transaction_id', $transaction->id)->delete();
+                    $transaction->delete();
+                    session()->flash('success', 'Transaction supprimée (dernier article). Stock restauré.');
+                } else {
+                    // Mettre à jour le mouvement de caisse
+                    CashMovement::where('transaction_id', $transaction->id)->update(['amount' => $newTotal]);
+                    session()->flash('success', 'Article supprimé. Stock restauré et totaux mis à jour.');
+                }
+            }
+
+            DB::commit();
+            $this->closeDeleteModal();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de la suppression: ' . $e->getMessage());
+        }
+    }
+
+    protected function isAdmin(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->role === 'admin';
     }
 }

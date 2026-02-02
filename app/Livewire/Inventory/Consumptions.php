@@ -86,6 +86,186 @@ class Consumptions extends Component
         session()->flash('success', 'Consommation enregistrée.');
     }
 
+    // Modal d'édition (Admin uniquement)
+    public bool $showEditModal = false;
+    public ?int $editingId = null;
+    public ?int $edit_product_id = null;
+    public int $edit_quantity_used = 1;
+    public ?int $edit_staff_id = null;
+    public ?string $edit_used_at = null;
+    public ?string $edit_notes = null;
+
+    // Modal de suppression (Admin uniquement)
+    public bool $showDeleteModal = false;
+    public ?int $deletingId = null;
+    public ?string $deletingInfo = null;
+
+    public function openEditModal(int $id): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour modifier une consommation.');
+            return;
+        }
+
+        $consumption = ProductConsumption::with('product')->find($id);
+        if (!$consumption) {
+            session()->flash('error', 'Consommation non trouvée.');
+            return;
+        }
+
+        $this->editingId = $consumption->id;
+        $this->edit_product_id = $consumption->product_id;
+        $this->edit_quantity_used = $consumption->quantity_used;
+        $this->edit_staff_id = $consumption->staff_id;
+        $this->edit_used_at = $consumption->used_at->toDateString();
+        $this->edit_notes = $consumption->notes;
+        $this->showEditModal = true;
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editingId = null;
+        $this->edit_product_id = null;
+        $this->edit_quantity_used = 1;
+        $this->edit_staff_id = null;
+        $this->edit_used_at = null;
+        $this->edit_notes = null;
+    }
+
+    public function updateConsumption(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour modifier une consommation.');
+            return;
+        }
+
+        $this->validate([
+            'edit_product_id' => ['required', 'exists:products,id'],
+            'edit_quantity_used' => ['required', 'integer', 'min:1'],
+            'edit_staff_id' => ['nullable', 'exists:users,id'],
+            'edit_used_at' => ['required', 'date'],
+            'edit_notes' => ['nullable', 'string'],
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $consumption = ProductConsumption::findOrFail($this->editingId);
+            $oldQuantity = $consumption->quantity_used;
+            $oldProductId = $consumption->product_id;
+            $newQuantity = $this->edit_quantity_used;
+
+            // Restaurer le stock de l'ancien produit
+            if ($oldProductId) {
+                Product::where('id', $oldProductId)->increment('stock_quantity', $oldQuantity);
+            }
+
+            // Vérifier le stock disponible du nouveau produit
+            $newProduct = Product::lockForUpdate()->findOrFail($this->edit_product_id);
+            $available = max(0, (int)$newProduct->stock_quantity);
+            if ($newQuantity > $available) {
+                DB::rollBack();
+                $this->addError('edit_quantity_used', 'Stock insuffisant. Disponible: '.$available);
+                return;
+            }
+
+            // Mettre à jour la consommation
+            $consumption->update([
+                'product_id' => $this->edit_product_id,
+                'quantity_used' => $newQuantity,
+                'staff_id' => $this->edit_staff_id,
+                'used_at' => $this->edit_used_at,
+                'notes' => $this->edit_notes,
+            ]);
+
+            // Décrémenter le stock du nouveau produit
+            $newProduct->decrement('stock_quantity', $newQuantity);
+
+            // Mettre à jour le mouvement de stock
+            StockMovement::where('reference_id', $consumption->id)
+                ->where('reason', 'Consommation')
+                ->update([
+                    'product_id' => $this->edit_product_id,
+                    'qty_change' => -$newQuantity,
+                ]);
+
+            DB::commit();
+
+            $this->closeEditModal();
+            session()->flash('success', 'Consommation modifiée avec succès.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de la modification: ' . $e->getMessage());
+        }
+    }
+
+    public function confirmDelete(int $id): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer une consommation.');
+            return;
+        }
+
+        $consumption = ProductConsumption::with('product')->find($id);
+        if (!$consumption) {
+            session()->flash('error', 'Consommation non trouvée.');
+            return;
+        }
+
+        $this->deletingId = $consumption->id;
+        $this->deletingInfo = ($consumption->product->name ?? 'Produit inconnu') . ' - ' . $consumption->quantity_used . ' unité(s) (' . $consumption->used_at->format('d/m/Y') . ')';
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
+        $this->deletingInfo = null;
+    }
+
+    public function deleteConsumption(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer une consommation.');
+            return;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $consumption = ProductConsumption::findOrFail($this->deletingId);
+
+            // Restaurer le stock
+            Product::where('id', $consumption->product_id)->increment('stock_quantity', $consumption->quantity_used);
+
+            // Supprimer le mouvement de stock associé
+            StockMovement::where('reference_id', $consumption->id)
+                ->where('reason', 'Consommation')
+                ->delete();
+
+            // Supprimer la consommation
+            $consumption->delete();
+
+            DB::commit();
+
+            $this->closeDeleteModal();
+            session()->flash('success', 'Consommation supprimée et stock restauré.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de la suppression: ' . $e->getMessage());
+        }
+    }
+
+    protected function isAdmin(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->role === 'admin';
+    }
+
     public function render()
     {
         // Ne montrer que les produits qui peuvent être consommés (consumption ou both)

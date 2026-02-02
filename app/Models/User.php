@@ -124,16 +124,44 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permissionName): bool
     {
-        // Admin a toujours toutes les permissions
-        if ($this->role_name === 'admin') {
+        // Admin a toujours toutes les permissions (vérifie role_id ET l'ancien champ role)
+        if ($this->role_name === 'admin' || $this->role === 'admin') {
             return true;
         }
 
-        if (!$this->roleModel) {
-            return false;
+        // Si l'utilisateur a un role_id, utiliser le nouveau système
+        if ($this->roleModel) {
+            return $this->roleModel->hasPermission($permissionName);
         }
 
-        return $this->roleModel->hasPermission($permissionName);
+        // Fallback sur l'ancien système pour compatibilité
+        // Si pas de role_id, vérifier l'ancien champ role
+        $legacyPermissions = $this->getLegacyPermissions();
+        return in_array($permissionName, $legacyPermissions);
+    }
+
+    /**
+     * Obtenir les permissions basées sur l'ancien champ role (fallback)
+     */
+    protected function getLegacyPermissions(): array
+    {
+        $role = $this->role ?? 'staff';
+
+        $permissions = [
+            'admin' => ['*'], // Tout
+            'cashier' => ['pos', 'pos.transactions'],
+            'staff' => [
+                'dashboard', 'pos', 'pos.transactions', 'services', 'products',
+                'clients', 'appointments', 'inventory.consumptions'
+            ],
+            'manager' => [
+                'dashboard', 'pos', 'pos.transactions', 'services', 'products',
+                'clients', 'appointments', 'inventory.supplies', 'inventory.consumptions',
+                'inventory.stock-sheet', 'staff.performance', 'cash'
+            ],
+        ];
+
+        return $permissions[$role] ?? [];
     }
 
     /**

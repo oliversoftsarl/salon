@@ -93,6 +93,8 @@ class PayrollManager extends Component
 
         if ($this->selectedStaffId) {
             $this->loadStaffShortages();
+            // Recalculer le chiffre d'affaires si c'est un coiffeur/barbier
+            $this->recalculateBaseSalaryIfNeeded();
         }
     }
 
@@ -124,6 +126,52 @@ class PayrollManager extends Component
         } else {
             $this->periodStart = now()->startOfMonth()->toDateString();
             $this->periodEnd = now()->endOfMonth()->toDateString();
+        }
+    }
+
+    /**
+     * Calcule le chiffre d'affaires généré par le staff pendant la période sélectionnée
+     */
+    protected function calculateStaffRevenue(): float
+    {
+        if (!$this->selectedStaffId || !$this->periodStart || !$this->periodEnd) {
+            return 0;
+        }
+
+        // Calculer le total des services effectués par ce staff (stylist_id)
+        $revenue = \App\Models\TransactionItem::where('stylist_id', $this->selectedStaffId)
+            ->whereHas('transaction', function ($query) {
+                $query->whereDate('created_at', '>=', $this->periodStart)
+                      ->whereDate('created_at', '<=', $this->periodEnd);
+            })
+            ->sum('line_total');
+
+        return (float) $revenue;
+    }
+
+    /**
+     * Recalcule le salaire brut si nécessaire (pour les coiffeurs/barbiers)
+     */
+    protected function recalculateBaseSalaryIfNeeded(): void
+    {
+        if (!$this->selectedStaffId) {
+            return;
+        }
+
+        $staff = User::with('staffProfile')->find($this->selectedStaffId);
+
+        if (!$staff) {
+            return;
+        }
+
+        $roleTitle = strtolower($staff->staffProfile?->role_title ?? '');
+        $isWeeklyPaid = str_contains($roleTitle, 'coiffeur') ||
+                        str_contains($roleTitle, 'coiffeuse') ||
+                        str_contains($roleTitle, 'barbier');
+
+        if ($isWeeklyPaid) {
+            $this->baseSalary = $this->calculateStaffRevenue();
+            $this->calculateNetAmount();
         }
     }
 
@@ -159,7 +207,13 @@ class PayrollManager extends Component
         $this->loadStaffShortages();
 
         // Définir le salaire de base
-        $this->baseSalary = $staff->staffProfile?->hourly_rate ?? 0;
+        // Pour les coiffeurs/barbiers, c'est le chiffre d'affaires généré pendant la période
+        if ($isWeeklyPaid) {
+            $this->baseSalary = $this->calculateStaffRevenue();
+        } else {
+            // Pour les autres staff, utiliser le taux horaire comme salaire de base
+            $this->baseSalary = $staff->staffProfile?->hourly_rate ?? 0;
+        }
 
         $this->calculateNetAmount();
     }

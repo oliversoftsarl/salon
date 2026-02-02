@@ -242,9 +242,19 @@
                                                     <input type="date" class="form-control" wire:model="periodEnd" readonly>
                                                 </div>
                                                 <div class="col-6">
-                                                    <label class="form-label">Salaire de base (FC)</label>
-                                                    <input type="number" class="form-control" wire:model.live="baseSalary" min="0" step="1000">
+                                                    <label class="form-label">
+                                                        @if($paymentType === 'weekly')
+                                                            Chiffre d'affaires (FC)
+                                                            <i class="fas fa-info-circle text-muted ms-1" title="CA généré par ce staff pendant la période"></i>
+                                                        @else
+                                                            Salaire de base (FC)
+                                                        @endif
+                                                    </label>
+                                                    <input type="number" class="form-control" wire:model.live="baseSalary" min="0" step="1000" @if($paymentType === 'weekly') readonly @endif>
                                                     @error('baseSalary') <small class="text-danger">{{ $message }}</small> @enderror
+                                                    @if($paymentType === 'weekly')
+                                                        <small class="text-muted">Calculé automatiquement selon les prestations</small>
+                                                    @endif
                                                 </div>
                                                 <div class="col-6">
                                                     <label class="form-label">Bonus (FC)</label>
@@ -364,7 +374,7 @@
                                         <div class="card-body text-white">
                                             <h6 class="text-white mb-3"><i class="ni ni-money-coins me-2"></i>Récapitulatif</h6>
                                             <div class="d-flex justify-content-between mb-2">
-                                                <span>Salaire de base:</span>
+                                                <span>{{ $paymentType === 'weekly' ? "Chiffre d'affaires:" : "Salaire de base:" }}</span>
                                                 <span>{{ number_format($baseSalary, 0, ',', ' ') }} FC</span>
                                             </div>
                                             @if($bonus > 0)

@@ -141,6 +141,10 @@ jobs:
             echo "🗄️ Running migrations..."
             php artisan migrate --force --verbose
 
+            # Executer les seeders si nécessaire
+            # echo "🌱 Seeding database..."
+            # php artisan db:seed --class=RoleAndPermissionsSeeder --force
+
             # Afficher le statut des migrations
             echo "📋 Migration status:"
             php artisan migrate:status | tail -20

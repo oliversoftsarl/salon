@@ -30,6 +30,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'role_id',
         'active',
     ];
 
@@ -66,11 +67,17 @@ class User extends Authenticatable
 
     public function hasRole(string|array $roles): bool
     {
-        $userRole = $this->role ?? 'staff';
-        if (is_array($roles)) {
-            return in_array($userRole, $roles, true);
+        // Utiliser le nouveau système de rôles si disponible
+        if ($this->roleModel) {
+            $userRoleName = $this->roleModel->name;
+        } else {
+            $userRoleName = $this->role ?? 'staff';
         }
-        return $userRole === $roles;
+
+        if (is_array($roles)) {
+            return in_array($userRoleName, $roles, true);
+        }
+        return $userRoleName === $roles;
     }
 
     public function isAdmin(): bool
@@ -86,6 +93,102 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return $this->hasRole('staff');
+    }
+
+    /**
+     * Relation avec le rôle
+     */
+    public function roleModel()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    /**
+     * Obtenir le nom du rôle
+     */
+    public function getRoleNameAttribute(): string
+    {
+        return $this->roleModel?->name ?? $this->role ?? 'staff';
+    }
+
+    /**
+     * Obtenir le nom d'affichage du rôle
+     */
+    public function getRoleDisplayNameAttribute(): string
+    {
+        return $this->roleModel?->display_name ?? ucfirst($this->role ?? 'Staff');
+    }
+
+    /**
+     * Vérifier si l'utilisateur a une permission spécifique
+     */
+    public function hasPermission(string $permissionName): bool
+    {
+        // Admin a toujours toutes les permissions (vérifie role_id ET l'ancien champ role)
+        if ($this->role_name === 'admin' || $this->role === 'admin') {
+            return true;
+        }
+
+        // Si l'utilisateur a un role_id, utiliser le nouveau système
+        if ($this->roleModel) {
+            return $this->roleModel->hasPermission($permissionName);
+        }
+
+        // Fallback sur l'ancien système pour compatibilité
+        // Si pas de role_id, vérifier l'ancien champ role
+        $legacyPermissions = $this->getLegacyPermissions();
+        return in_array($permissionName, $legacyPermissions);
+    }
+
+    /**
+     * Obtenir les permissions basées sur l'ancien champ role (fallback)
+     */
+    protected function getLegacyPermissions(): array
+    {
+        $role = $this->role ?? 'staff';
+
+        $permissions = [
+            'admin' => ['*'], // Tout
+            'cashier' => ['pos', 'pos.transactions'],
+            'staff' => [
+                'dashboard', 'pos', 'pos.transactions', 'services', 'products',
+                'clients', 'appointments', 'inventory.consumptions'
+            ],
+            'manager' => [
+                'dashboard', 'pos', 'pos.transactions', 'services', 'products',
+                'clients', 'appointments', 'inventory.supplies', 'inventory.consumptions',
+                'inventory.stock-sheet', 'staff.performance', 'cash'
+            ],
+        ];
+
+        return $permissions[$role] ?? [];
+    }
+
+    /**
+     * Obtenir toutes les permissions de l'utilisateur
+     */
+    public function getPermissionsAttribute()
+    {
+        if (!$this->roleModel) {
+            return collect([]);
+        }
+        return $this->roleModel->permissions;
+    }
+
+    /**
+     * Obtenir les menus accessibles par l'utilisateur
+     */
+    public function getAccessibleMenusAttribute()
+    {
+        if ($this->role_name === 'admin') {
+            return Permission::menus()->get();
+        }
+
+        if (!$this->roleModel) {
+            return collect([]);
+        }
+
+        return $this->roleModel->permissions()->where('is_menu', true)->orderBy('order')->get();
     }
 
     /**
@@ -134,19 +237,12 @@ class User extends Authenticatable
      */
     public function canAccess(string $feature): bool
     {
-        $permissions = [
-            'dashboard' => ['admin', 'staff'],
-            'pos' => ['admin', 'cashier'],
-            'transactions' => ['admin', 'cashier'],
-            'services' => ['admin', 'staff'],
-            'products' => ['admin', 'staff'],
-            'clients' => ['admin', 'staff'],
-            'appointments' => ['admin', 'staff'],
-            'staff' => ['admin'],
-            'inventory' => ['admin', 'staff'],
-            'users' => ['admin'],
-        ];
+        // Admin a toujours accès à tout
+        if ($this->role_name === 'admin') {
+            return true;
+        }
 
-        return isset($permissions[$feature]) && in_array($this->role, $permissions[$feature], true);
+        // Utiliser le nouveau système de permissions
+        return $this->hasPermission($feature);
     }
 }

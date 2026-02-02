@@ -48,10 +48,10 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Rôle</label>
-                        <select class="form-select" wire:model="role">
-                            <option value="staff">Staff</option>
-                            <option value="cashier">Cashier</option>
-                            <option value="admin">Admin</option>
+                        <select class="form-select" wire:model.live="role">
+                            @foreach($availableRoles as $roleOption)
+                                <option value="{{ $roleOption->name }}">{{ $roleOption->display_name }}</option>
+                            @endforeach
                         </select>
                         @error('role') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
@@ -126,8 +126,8 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-{{ $u->role === 'admin' ? 'danger' : ($u->role === 'cashier' ? 'warning' : 'dark') }}">
-                                {{ ucfirst($u->role) }}
+                            <span class="badge bg-{{ $u->role === 'admin' ? 'danger' : ($u->role === 'cashier' ? 'warning' : ($u->role === 'manager' ? 'info' : 'dark')) }}">
+                                {{ $u->roleModel?->display_name ?? ucfirst($u->role) }}
                             </span>
                         </td>
                         <td class="text-center">

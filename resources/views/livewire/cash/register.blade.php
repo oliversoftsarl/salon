@@ -272,14 +272,14 @@
                                     </span>
                                 </td>
                                 <td class="text-end pe-3">
-                                    @if(!$mvt->transaction_id)
-                                        <button class="btn btn-sm btn-outline-primary px-2 py-1" wire:click="edit({{ $mvt->id }})" title="Modifier">
-                                            <i class="ni ni-ruler-pencil"></i>
+                                    @if(!$mvt->transaction_id && auth()->user()->role === 'admin')
+                                        <button class="btn btn-sm btn-outline-warning px-2 py-1" wire:click="edit({{ $mvt->id }})" title="Modifier">
+                                            <i class="fas fa-edit"></i>
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="delete({{ $mvt->id }})" onclick="return confirm('Supprimer ce mouvement ?')" title="Supprimer">
-                                            <i class="ni ni-fat-remove"></i>
+                                            <i class="fas fa-trash"></i>
                                         </button>
-                                    @else
+                                    @elseif($mvt->transaction_id)
                                         <span class="badge bg-secondary" title="Mouvement automatique (vente)">
                                             <i class="ni ni-lock-circle-open"></i>
                                         </span>

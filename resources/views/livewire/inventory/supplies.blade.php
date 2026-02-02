@@ -112,6 +112,9 @@
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-md-table-cell">Fournisseur</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end d-none d-lg-table-cell" style="width: 80px;">Coût U.</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-xl-table-cell">Notes</th>
+                                    @if(auth()->user()->role === 'admin')
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 90px;">Actions</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -133,14 +136,24 @@
                                             <span class="text-xs text-truncate d-inline-block" style="max-width: 120px;" title="{{ $s->supplier }}">{{ $s->supplier ?? '—' }}</span>
                                         </td>
                                         <td class="text-end d-none d-lg-table-cell">
-                                            <span class="text-xs">{{ $s->unit_cost !== null ? number_format($s->unit_cost, 2, ',', ' ') . ' €' : '—' }}</span>
+                                            <span class="text-xs">{{ $s->unit_cost !== null ? number_format($s->unit_cost, 0, ',', ' ') . ' FC' : '—' }}</span>
                                         </td>
                                         <td class="d-none d-xl-table-cell">
                                             <span class="text-xs text-truncate d-inline-block" style="max-width: 100px;" title="{{ $s->notes }}">{{ $s->notes }}</span>
                                         </td>
+                                        @if(auth()->user()->role === 'admin')
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-warning px-2 py-1" wire:click="openEditModal({{ $s->id }})" title="Modifier">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="confirmDelete({{ $s->id }})" title="Supprimer">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" class="text-center py-4 text-muted">Aucun approvisionnement</td></tr>
+                                    <tr><td colspan="{{ auth()->user()->role === 'admin' ? 7 : 6 }}" class="text-center py-4 text-muted">Aucun approvisionnement</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -153,4 +166,99 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal d'édition (Admin uniquement) --}}
+    @if($showEditModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-warning">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-edit me-2"></i>Modifier l'approvisionnement
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeEditModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Produit</label>
+                            <select class="form-select" wire:model="edit_product_id">
+                                <option value="">— Sélectionner —</option>
+                                @foreach($products as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('edit_product_id') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Quantité</label>
+                                <input type="number" min="1" class="form-control" wire:model="edit_quantity_received">
+                                @error('edit_quantity_received') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Coût unitaire (FC)</label>
+                                <input type="number" step="1" min="0" class="form-control" wire:model="edit_unit_cost">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" wire:model="edit_received_at">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Fournisseur</label>
+                            <input type="text" class="form-control" wire:model="edit_supplier">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" rows="2" wire:model="edit_notes"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeEditModal">Annuler</button>
+                        <button type="button" class="btn btn-warning" wire:click="updateSupply">
+                            <i class="fas fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal de confirmation de suppression (Admin uniquement) --}}
+    @if($showDeleteModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-danger">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-trash me-2"></i>Confirmer la suppression
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeDeleteModal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 64px;"></i>
+                        </div>
+                        <h5>Êtes-vous sûr de vouloir supprimer cet approvisionnement ?</h5>
+                        <p class="text-muted mb-3">{{ $deletingInfo }}</p>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Le stock sera automatiquement réduit.
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" wire:click="closeDeleteModal">
+                            <i class="fas fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteSupply">
+                            <i class="fas fa-trash me-2"></i>Oui, supprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

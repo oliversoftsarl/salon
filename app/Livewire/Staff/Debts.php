@@ -247,6 +247,11 @@ class Debts extends Component
 
     public function cancelDebt(int $debtId): void
     {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour annuler une dette.');
+            return;
+        }
+
         $debt = StaffDebt::findOrFail($debtId);
 
         if ($debt->paid_amount > 0) {
@@ -260,6 +265,11 @@ class Debts extends Component
 
     public function deleteDebt(int $debtId): void
     {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer une dette.');
+            return;
+        }
+
         $debt = StaffDebt::findOrFail($debtId);
 
         if ($debt->payments()->count() > 0) {
@@ -269,6 +279,12 @@ class Debts extends Component
 
         $debt->delete();
         session()->flash('success', 'Dette supprimée.');
+    }
+
+    protected function isAdmin(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->role === 'admin';
     }
 
     public function getStaffListProperty()

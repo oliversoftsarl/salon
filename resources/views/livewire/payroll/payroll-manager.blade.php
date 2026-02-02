@@ -151,9 +151,19 @@
                                     <span class="text-sm">{{ $payment->payment_date->format('d/m/Y') }}</span>
                                 </td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-info px-2 py-1" wire:click="showPaymentDetails({{ $payment->id }})" title="Détails">
-                                        <i class="ni ni-zoom-split-in"></i>
-                                    </button>
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <button class="btn btn-sm btn-outline-info px-2 py-1" wire:click="showPaymentDetails({{ $payment->id }})" title="Détails">
+                                            <i class="ni ni-zoom-split-in"></i>
+                                        </button>
+                                        @if(auth()->user()->role === 'admin')
+                                            <button class="btn btn-sm btn-outline-warning px-2 py-1" wire:click="openEditModal({{ $payment->id }})" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger px-2 py-1" wire:click="confirmDelete({{ $payment->id }})" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -539,6 +549,108 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeDetailsModal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal d'édition (Admin uniquement) --}}
+    @if($showEditModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-warning">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-edit me-2"></i>Modifier le paiement
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeEditModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Attention :</strong> La modification de ce paiement affectera également le mouvement de caisse associé.
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Salaire de base / Chiffre d'affaires (FC)</label>
+                                <input type="number" class="form-control" wire:model.live="editBaseSalary" min="0" step="1000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Bonus (FC)</label>
+                                <input type="number" class="form-control" wire:model.live="editBonus" min="0" step="1000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Déductions dettes (FC)</label>
+                                <input type="number" class="form-control" wire:model.live="editDeductions" min="0" step="1000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Déductions manquants (FC)</label>
+                                <input type="number" class="form-control" wire:model.live="editShortageDeduction" min="0" step="1000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mode de paiement</label>
+                                <select class="form-select" wire:model="editPaymentMethod">
+                                    <option value="cash">Espèces</option>
+                                    <option value="transfer">Virement</option>
+                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="check">Chèque</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Montant net calculé</label>
+                                <div class="form-control bg-light text-success font-weight-bold">
+                                    {{ number_format(max(0, $editBaseSalary + $editBonus - $editDeductions - $editShortageDeduction), 0, ',', ' ') }} FC
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" wire:model="editNotes" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeEditModal">Annuler</button>
+                        <button type="button" class="btn btn-warning" wire:click="updatePayment">
+                            <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal de confirmation de suppression (Admin uniquement) --}}
+    @if($showDeleteModal && auth()->user()->role === 'admin')
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-danger">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-trash me-2"></i>Confirmer la suppression
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeDeleteModal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 64px;"></i>
+                        </div>
+                        <h5>Êtes-vous sûr de vouloir supprimer ce paiement ?</h5>
+                        <p class="text-muted mb-3">{{ $deletingPaymentInfo }}</p>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Cette action est irréversible !</strong><br>
+                            <small>Le mouvement de caisse associé sera également supprimé et les dettes seront restaurées.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" wire:click="closeDeleteModal">
+                            <i class="fas fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deletePayment">
+                            <i class="fas fa-trash me-2"></i>Oui, supprimer
+                        </button>
                     </div>
                 </div>
             </div>

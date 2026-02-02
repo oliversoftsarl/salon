@@ -86,6 +86,182 @@ class Supplies extends Component
         session()->flash('success', 'Approvisionnement enregistré.');
     }
 
+    // Modal d'édition (Admin uniquement)
+    public bool $showEditModal = false;
+    public ?int $editingId = null;
+    public ?int $edit_product_id = null;
+    public int $edit_quantity_received = 1;
+    public ?string $edit_received_at = null;
+    public ?string $edit_supplier = null;
+    public ?string $edit_unit_cost = null;
+    public ?string $edit_notes = null;
+
+    // Modal de suppression (Admin uniquement)
+    public bool $showDeleteModal = false;
+    public ?int $deletingId = null;
+    public ?string $deletingInfo = null;
+
+    public function openEditModal(int $id): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour modifier un approvisionnement.');
+            return;
+        }
+
+        $supply = ProductSupply::with('product')->find($id);
+        if (!$supply) {
+            session()->flash('error', 'Approvisionnement non trouvé.');
+            return;
+        }
+
+        $this->editingId = $supply->id;
+        $this->edit_product_id = $supply->product_id;
+        $this->edit_quantity_received = $supply->quantity_received;
+        $this->edit_received_at = $supply->received_at->toDateString();
+        $this->edit_supplier = $supply->supplier;
+        $this->edit_unit_cost = $supply->unit_cost;
+        $this->edit_notes = $supply->notes;
+        $this->showEditModal = true;
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editingId = null;
+        $this->edit_product_id = null;
+        $this->edit_quantity_received = 1;
+        $this->edit_received_at = null;
+        $this->edit_supplier = null;
+        $this->edit_unit_cost = null;
+        $this->edit_notes = null;
+    }
+
+    public function updateSupply(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour modifier un approvisionnement.');
+            return;
+        }
+
+        $this->validate([
+            'edit_product_id' => ['required', 'exists:products,id'],
+            'edit_quantity_received' => ['required', 'integer', 'min:1'],
+            'edit_received_at' => ['required', 'date'],
+            'edit_supplier' => ['nullable', 'string', 'max:255'],
+            'edit_unit_cost' => ['nullable', 'numeric', 'min:0'],
+            'edit_notes' => ['nullable', 'string'],
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $supply = ProductSupply::findOrFail($this->editingId);
+            $oldQuantity = $supply->quantity_received;
+            $oldProductId = $supply->product_id;
+            $newQuantity = $this->edit_quantity_received;
+
+            // Annuler l'ancien approvisionnement (décrémenter le stock)
+            if ($oldProductId) {
+                Product::where('id', $oldProductId)->decrement('stock_quantity', $oldQuantity);
+            }
+
+            // Mettre à jour l'approvisionnement
+            $supply->update([
+                'product_id' => $this->edit_product_id,
+                'quantity_received' => $newQuantity,
+                'received_at' => $this->edit_received_at,
+                'supplier' => $this->edit_supplier,
+                'unit_cost' => $this->edit_unit_cost,
+                'notes' => $this->edit_notes,
+            ]);
+
+            // Appliquer le nouveau approvisionnement
+            Product::where('id', $this->edit_product_id)->increment('stock_quantity', $newQuantity);
+
+            // Mettre à jour le mouvement de stock
+            StockMovement::where('reference_id', $supply->id)
+                ->where('reason', 'Approvisionnement')
+                ->update([
+                    'product_id' => $this->edit_product_id,
+                    'qty_change' => $newQuantity,
+                ]);
+
+            DB::commit();
+
+            $this->closeEditModal();
+            session()->flash('success', 'Approvisionnement modifié avec succès.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de la modification: ' . $e->getMessage());
+        }
+    }
+
+    public function confirmDelete(int $id): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer un approvisionnement.');
+            return;
+        }
+
+        $supply = ProductSupply::with('product')->find($id);
+        if (!$supply) {
+            session()->flash('error', 'Approvisionnement non trouvé.');
+            return;
+        }
+
+        $this->deletingId = $supply->id;
+        $this->deletingInfo = ($supply->product->name ?? 'Produit inconnu') . ' - ' . $supply->quantity_received . ' unité(s) (' . $supply->received_at->format('d/m/Y') . ')';
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
+        $this->deletingInfo = null;
+    }
+
+    public function deleteSupply(): void
+    {
+        if (!$this->isAdmin()) {
+            session()->flash('error', 'Vous n\'avez pas les droits pour supprimer un approvisionnement.');
+            return;
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $supply = ProductSupply::findOrFail($this->deletingId);
+
+            // Annuler le stock ajouté
+            Product::where('id', $supply->product_id)->decrement('stock_quantity', $supply->quantity_received);
+
+            // Supprimer le mouvement de stock associé
+            StockMovement::where('reference_id', $supply->id)
+                ->where('reason', 'Approvisionnement')
+                ->delete();
+
+            // Supprimer l'approvisionnement
+            $supply->delete();
+
+            DB::commit();
+
+            $this->closeDeleteModal();
+            session()->flash('success', 'Approvisionnement supprimé et stock ajusté.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erreur lors de la suppression: ' . $e->getMessage());
+        }
+    }
+
+    protected function isAdmin(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->role === 'admin';
+    }
+
     public function render()
     {
         $products = Product::orderBy('name')->get(['id','name','stock_quantity','low_stock_threshold']);

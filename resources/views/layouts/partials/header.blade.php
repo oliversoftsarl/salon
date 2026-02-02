@@ -193,6 +193,16 @@
         </a>
       </li>
 
+      {{-- Rôles & Permissions --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.roles') ? 'active' : '' }}" href="{{ route('settings.roles') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-key-25 text-danger text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Rôles & Permissions</span>
+        </a>
+      </li>
+
       {{-- Taux de Change --}}
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('settings.exchange-rates') ? 'active' : '' }}" href="{{ route('settings.exchange-rates') }}">

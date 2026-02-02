@@ -11,13 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // ... existing code ...
         $middleware->alias([
-            // ... existing code ...
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'redirect.by.role' => \App\Http\Middleware\RedirectByRole::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // ... existing code ...
+        //
     })->create();

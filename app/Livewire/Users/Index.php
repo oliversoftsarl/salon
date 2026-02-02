@@ -3,6 +3,7 @@
 namespace App\Livewire\Users;
 
 use App\Models\User;
+use App\Models\Role;
 use App\Models\StaffProfile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -23,6 +24,7 @@ class Index extends Component
     public string $name = '';
     public string $email = '';
     public string $role = 'staff';
+    public ?int $role_id = null;
     public bool $active = true;
     public string $password = '';
     public string $password_confirmation = '';
@@ -55,7 +57,8 @@ class Index extends Component
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', $uniqueEmail],
-            'role' => ['required', Rule::in(['admin','staff','cashier'])],
+            'role' => ['required', Rule::in(['admin','staff','cashier','manager'])],
+            'role_id' => ['nullable', 'exists:roles,id'],
             'active' => ['boolean'],
             'password' => [$this->editingId ? 'nullable' : 'required', 'string', 'min:8', 'same:password_confirmation'],
             'password_confirmation' => [$this->editingId ? 'nullable' : 'required', 'string', 'min:8'],
@@ -80,10 +83,22 @@ class Index extends Component
         $this->validateOnly($property, $this->rules(), $this->messages);
     }
 
+    public function updatedRole($value): void
+    {
+        // Synchroniser role_id avec le rôle sélectionné
+        $role = Role::where('name', $value)->first();
+        $this->role_id = $role?->id;
+    }
+
+    public function getRolesProperty()
+    {
+        return Role::orderBy('display_name')->get();
+    }
+
     public function render()
     {
         $users = User::query()
-            ->with('staffProfile')
+            ->with(['staffProfile', 'roleModel'])
             ->when($this->search, fn($q) =>
                 $q->where('name', 'like', "%{$this->search}%")
                   ->orWhere('email', 'like', "%{$this->search}%")
@@ -92,8 +107,10 @@ class Index extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.users.index', compact('users'))
-            ->layout('layouts.main', ['title' => 'Utilisateurs']);
+        return view('livewire.users.index', [
+            'users' => $users,
+            'availableRoles' => $this->roles,
+        ])->layout('layouts.main', ['title' => 'Utilisateurs']);
     }
 
     public function create(): void
@@ -109,6 +126,7 @@ class Index extends Component
         $this->name = $u->name;
         $this->email = $u->email;
         $this->role = $u->role;
+        $this->role_id = $u->role_id;
         $this->active = (bool)$u->active;
         $this->password = '';
         $this->password_confirmation = '';
@@ -119,12 +137,19 @@ class Index extends Component
     {
         $data = $this->validate($this->rules(), $this->messages);
 
+        // Assigner le role_id basé sur le rôle sélectionné
+        $roleModel = Role::where('name', $this->role)->first();
+        $data['role_id'] = $roleModel?->id;
+
         // Préservation du mot de passe si vide en édition
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password'], $data['password_confirmation']);
         }
+
+        // Retirer staff_category des données car ce n'est pas un champ de la table users
+        unset($data['staff_category']);
 
         if ($this->editingId && $this->editingId > 0) {
             $u = User::findOrFail($this->editingId);
@@ -225,6 +250,7 @@ class Index extends Component
         $this->name = '';
         $this->email = '';
         $this->role = 'staff';
+        $this->role_id = null;
         $this->active = true;
         $this->password = '';
         $this->password_confirmation = '';

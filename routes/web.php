@@ -7,6 +7,7 @@ use App\Livewire\Inventory\StockSheet as InventoryStockSheet;
 use App\Livewire\Cash\Register as CashRegister;
 use App\Livewire\Settings\ExchangeRates;
 use App\Livewire\Settings\RevenueSettings;
+use App\Livewire\Settings\RolesPermissions;
 use App\Livewire\Payroll\PayrollManager;
 use App\Livewire\Equipment\Index as EquipmentIndex;
 
@@ -124,6 +125,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/settings/revenue', RevenueSettings::class)
         ->middleware('role:admin')
         ->name('settings.revenue');
+
+    Route::get('/settings/roles', RolesPermissions::class)
+        ->middleware('role:admin')
+        ->name('settings.roles');
 
     Route::get('/payroll', PayrollManager::class)
         ->middleware('role:admin')

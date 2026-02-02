@@ -8,6 +8,7 @@ use App\Livewire\Cash\Register as CashRegister;
 use App\Livewire\Settings\ExchangeRates;
 use App\Livewire\Settings\RevenueSettings;
 use App\Livewire\Payroll\PayrollManager;
+use App\Livewire\Equipment\Index as EquipmentIndex;
 
 use App\Livewire\Services\Index as ServicesIndex;
 use App\Livewire\Products\Index as ProductsIndex;
@@ -139,6 +140,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/inventory/stock-sheet', InventoryStockSheet::class)
         ->middleware('role:admin')
         ->name('inventory.stock-sheet');
+
+    Route::get('/equipment', EquipmentIndex::class)
+        ->middleware('role:admin')
+        ->name('equipment.index');
 
     Route::get('/inventory/stock-sheet/pdf', function () {
         $productId = request('product');

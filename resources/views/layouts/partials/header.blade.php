@@ -173,6 +173,16 @@
         </a>
       </li>
 
+      {{-- Équipements --}}
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('equipment.*') ? 'active' : '' }}" href="{{ route('equipment.index') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="fas fa-tools text-warning text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Équipements</span>
+        </a>
+      </li>
+
       {{-- Utilisateurs --}}
       <li class="nav-item">
         <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">

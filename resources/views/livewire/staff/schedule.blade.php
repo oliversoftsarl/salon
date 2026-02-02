@@ -178,6 +178,11 @@
                         <small class="text-muted">Inclut: Coiffeur, Masseuse/Masseur, Esthéticien, etc.</small>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Téléphone</label>
+                        <input type="tel" class="form-control form-control-lg" wire:model="edit_phone" placeholder="Ex: +243 999 999 999">
+                        @error('edit_phone') <small class="text-danger">{{ $message }}</small> @enderror
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Taux horaire (FC) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" step="0.01" min="0" class="form-control form-control-lg" wire:model="edit_hourly_rate" placeholder="0.00">

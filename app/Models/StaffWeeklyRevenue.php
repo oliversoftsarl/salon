@@ -39,6 +39,10 @@ class StaffWeeklyRevenue extends Model
 
     /**
      * Calculer et enregistrer les recettes hebdomadaires pour un staff
+     *
+     * Note: Le target_amount (seuil) est le montant minimum que le coiffeur doit réaliser.
+     * Si le coiffeur n'atteint pas ce seuil, la différence s'ajoute au cumul (dette).
+     * Si le coiffeur dépasse le seuil, le cumul reste inchangé (la réduction se fait lors du paiement).
      */
     public static function calculateWeeklyRevenue(int $staffId, Carbon $weekStart): self
     {
@@ -46,7 +50,7 @@ class StaffWeeklyRevenue extends Model
         $year = $weekStart->year;
         $weekNumber = $weekStart->weekOfYear;
 
-        // Récupérer le montant cible
+        // Récupérer le montant du seuil hebdomadaire
         $targetAmount = Setting::getWeeklyRevenueTarget();
 
         // Calculer le montant réalisé cette semaine par ce coiffeur
@@ -59,9 +63,11 @@ class StaffWeeklyRevenue extends Model
             ->sum('line_total');
 
         // Calculer la différence
+        // Positif = le coiffeur a dépassé le seuil
+        // Négatif = le coiffeur n'a pas atteint le seuil (manquant)
         $difference = $actualAmount - $targetAmount;
 
-        // Récupérer le cumul des manquants précédent
+        // Récupérer le cumul précédent
         $previousRecord = static::where('staff_id', $staffId)
             ->where(function ($q) use ($year, $weekNumber) {
                 $q->where('year', '<', $year)
@@ -76,13 +82,12 @@ class StaffWeeklyRevenue extends Model
         $previousCumulativeShortage = $previousRecord ? $previousRecord->cumulative_shortage : 0;
 
         // Calculer le nouveau cumul
-        // Si différence négative (manquant), on ajoute au cumul
-        // Si différence positive (surplus), on réduit le cumul (mais pas en dessous de 0)
+        // Si différence négative (manquant), on ajoute le manquant au cumul
+        // Si différence positive ou nulle (atteint ou dépassé), le cumul reste inchangé
+        // La réduction du cumul se fait uniquement lors du paiement via reduceShortage()
         $cumulativeShortage = $previousCumulativeShortage;
         if ($difference < 0) {
             $cumulativeShortage += abs($difference);
-        } else {
-            $cumulativeShortage = max(0, $cumulativeShortage - $difference);
         }
 
         // Créer ou mettre à jour l'enregistrement
@@ -121,7 +126,7 @@ class StaffWeeklyRevenue extends Model
     }
 
     /**
-     * Obtenir le cumul total des manquants pour un staff
+     * Obtenir le cumul total à déduire pour un staff (seuils non encore déduits)
      */
     public static function getTotalShortage(int $staffId): float
     {
@@ -130,6 +135,32 @@ class StaffWeeklyRevenue extends Model
             ->orderByDesc('week_number')
             ->first();
 
-        return $latestRecord ? $latestRecord->cumulative_shortage : 0;
+        return $latestRecord ? max(0, $latestRecord->cumulative_shortage) : 0;
+    }
+
+    /**
+     * Réduire le cumul après une déduction sur salaire
+     */
+    public static function reduceShortage(int $staffId, float $amountDeducted): void
+    {
+        if ($amountDeducted <= 0) {
+            return;
+        }
+
+        $latestRecord = static::where('staff_id', $staffId)
+            ->orderByDesc('year')
+            ->orderByDesc('week_number')
+            ->first();
+
+        if (!$latestRecord) {
+            return;
+        }
+
+        // Réduire le cumul (pas en dessous de 0)
+        $newCumulative = max(0, $latestRecord->cumulative_shortage - $amountDeducted);
+        $latestRecord->cumulative_shortage = $newCumulative;
+        $latestRecord->notes = ($latestRecord->notes ? $latestRecord->notes . "\n" : '') .
+            '[' . now()->format('d/m/Y H:i') . '] Déduction sur salaire: ' . number_format($amountDeducted, 0, ',', ' ') . ' FC';
+        $latestRecord->save();
     }
 }

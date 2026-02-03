@@ -338,41 +338,37 @@
                                         </div>
                                     </div>
 
-                                    {{-- Manquants (seulement pour coiffeurs/barbiers) --}}
-                                    @if(count($staffShortages) > 0 || $totalShortage > 0)
+                                    {{-- Seuil à déduire (seulement pour coiffeurs/barbiers) --}}
+                                    @if($totalToDeduct > 0)
                                         <div class="card mb-3">
                                             <div class="card-header pb-0 d-flex justify-content-between align-items-center">
-                                                <h6 class="mb-0"><i class="ni ni-chart-bar-32 me-2 text-warning"></i>Manquants Recettes</h6>
-                                                @if($totalShortage > 0)
-                                                    <button class="btn btn-outline-warning btn-sm" wire:click="applyFullShortageDeduction">
-                                                        Déduire tout
-                                                    </button>
-                                                @endif
+                                                <h6 class="mb-0"><i class="ni ni-chart-bar-32 me-2 text-warning"></i>Seuil à déduire</h6>
+                                                <button class="btn btn-outline-warning btn-sm" wire:click="applyFullShortageDeduction">
+                                                    Déduire tout
+                                                </button>
                                             </div>
-                                            <div class="card-body" style="max-height: 200px; overflow-y: auto;">
-                                                @if(count($staffShortages) > 0)
-                                                    @foreach($staffShortages as $shortage)
-                                                        <div class="d-flex justify-content-between py-2 border-bottom">
-                                                            <div>
-                                                                <span class="text-sm">{{ $shortage['week'] }}</span>
-                                                                <p class="text-xs text-muted mb-0">
-                                                                    Objectif: {{ number_format($shortage['target'], 0, ',', ' ') }} FC |
-                                                                    Réalisé: {{ number_format($shortage['actual'], 0, ',', ' ') }} FC
-                                                                </p>
-                                                            </div>
-                                                            <span class="badge bg-warning text-dark">-{{ number_format($shortage['shortage'], 0, ',', ' ') }} FC</span>
-                                                        </div>
-                                                    @endforeach
-                                                @endif
-                                                <div class="mt-2 p-2 bg-light rounded">
-                                                    <div class="d-flex justify-content-between">
-                                                        <strong>Cumul manquants:</strong>
-                                                        <strong class="text-warning">{{ number_format($totalShortage, 0, ',', ' ') }} FC</strong>
+                                            <div class="card-body">
+                                                <div class="p-2 bg-light rounded">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span>Seuil hebdomadaire:</span>
+                                                        <span>{{ number_format($weeklyTarget, 0, ',', ' ') }} FC</span>
+                                                    </div>
+                                                    @if($totalShortage > 0)
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span>Cumul manquants précédents:</span>
+                                                        <span class="text-danger">{{ number_format($totalShortage, 0, ',', ' ') }} FC</span>
+                                                    </div>
+                                                    @endif
+                                                    <hr class="my-2">
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <strong>Total à déduire:</strong>
+                                                        <strong class="text-warning">{{ number_format($totalToDeduct, 0, ',', ' ') }} FC</strong>
                                                     </div>
                                                     <div class="mt-2">
-                                                        <label class="form-label text-sm">Montant à déduire:</label>
+                                                        <label class="form-label text-sm">Montant à déduire du salaire:</label>
                                                         <input type="number" class="form-control form-control-sm"
-                                                               wire:model.live="deductShortage" min="0" max="{{ $totalShortage }}" step="1000">
+                                                               wire:model.live="deductShortage" min="0" max="{{ $totalToDeduct }}" step="1000">
+                                                        <small class="text-muted">Restant après déduction: {{ number_format(max(0, $totalToDeduct - $deductShortage), 0, ',', ' ') }} FC</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -401,7 +397,7 @@
                                             @endif
                                             @if($deductShortage > 0)
                                                 <div class="d-flex justify-content-between mb-2">
-                                                    <span>Déduction manquants:</span>
+                                                    <span>Déduction seuil:</span>
                                                     <span class="text-warning">-{{ number_format($deductShortage, 0, ',', ' ') }} FC</span>
                                                 </div>
                                             @endif

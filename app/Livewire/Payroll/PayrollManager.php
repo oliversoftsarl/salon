@@ -39,7 +39,9 @@ class PayrollManager extends Component
     public array $staffDebts = [];
     public array $staffShortages = [];
     public float $totalDebts = 0;
-    public float $totalShortage = 0;
+    public float $totalShortage = 0;  // Cumul des manquants précédents
+    public float $weeklyTarget = 0;    // Seuil de la semaine en cours
+    public float $totalToDeduct = 0;   // Total disponible à déduire (cumul + seuil si applicable)
     public array $selectedDebtsToDeduct = [];
 
     // Modal de détails
@@ -256,6 +258,8 @@ class PayrollManager extends Component
         // Réinitialiser les données
         $this->staffShortages = [];
         $this->totalShortage = 0;
+        $this->weeklyTarget = 0;
+        $this->totalToDeduct = 0;
         $this->deductShortage = 0;
 
         if (!$this->selectedStaffId) {
@@ -277,25 +281,15 @@ class PayrollManager extends Component
             return;
         }
 
-        $shortages = StaffWeeklyRevenue::where('staff_id', (int) $this->selectedStaffId)
-            ->where('difference', '<', 0)
-            ->orderByDesc('year')
-            ->orderByDesc('week_number')
-            ->limit(10)
-            ->get();
-
-        $this->staffShortages = $shortages->map(function ($shortage) {
-            return [
-                'id' => $shortage->id,
-                'week' => 'Semaine ' . $shortage->week_number . ' (' . $shortage->week_start->format('d/m') . ' - ' . $shortage->week_end->format('d/m') . ')',
-                'target' => (float) $shortage->target_amount,
-                'actual' => (float) $shortage->actual_amount,
-                'shortage' => abs((float) $shortage->difference),
-                'cumulative' => (float) $shortage->cumulative_shortage,
-            ];
-        })->toArray();
-
+        // Obtenir le cumul des manquants précédents
         $this->totalShortage = StaffWeeklyRevenue::getTotalShortage((int) $this->selectedStaffId);
+
+        // Obtenir le seuil hebdomadaire configuré
+        $this->weeklyTarget = Setting::getWeeklyRevenueTarget();
+
+        // Le total à déduire = cumul des manquants + seuil de la semaine
+        // (le seuil de la semaine doit être déduit même si le coiffeur a dépassé)
+        $this->totalToDeduct = $this->totalShortage + $this->weeklyTarget;
     }
 
     protected function resetStaffData(): void
@@ -305,6 +299,8 @@ class PayrollManager extends Component
         $this->staffShortages = [];
         $this->totalDebts = 0;
         $this->totalShortage = 0;
+        $this->weeklyTarget = 0;
+        $this->totalToDeduct = 0;
         $this->baseSalary = 0;
         $this->bonus = 0;
         $this->deductDebts = 0;
@@ -350,7 +346,8 @@ class PayrollManager extends Component
 
     public function applyFullShortageDeduction(): void
     {
-        $this->deductShortage = min($this->totalShortage, $this->baseSalary + $this->bonus - $this->deductDebts);
+        // Déduire le maximum possible (total disponible ou ce qui reste après les autres déductions)
+        $this->deductShortage = min($this->totalToDeduct, $this->baseSalary + $this->bonus - $this->deductDebts);
         $this->calculateNetAmount();
     }
 
@@ -461,7 +458,18 @@ class PayrollManager extends Component
                 $shortageDetails = [
                     'amount_deducted' => $this->deductShortage,
                     'total_shortage_before' => $this->totalShortage,
+                    'weekly_target' => $this->weeklyTarget,
+                    'total_to_deduct' => $this->totalToDeduct,
                 ];
+
+                // Réduire le cumul des manquants dans la base de données
+                // On ne réduit que le montant qui dépasse le seuil hebdomadaire (car le seuil de cette semaine est "payé")
+                // Si deductShortage <= weeklyTarget : rien à réduire du cumul (on paie juste le seuil de la semaine)
+                // Si deductShortage > weeklyTarget : on réduit le cumul de (deductShortage - weeklyTarget)
+                $amountToReduceFromCumul = max(0, $this->deductShortage - $this->weeklyTarget);
+                if ($amountToReduceFromCumul > 0 && $this->totalShortage > 0) {
+                    StaffWeeklyRevenue::reduceShortage((int) $this->selectedStaffId, min($amountToReduceFromCumul, $this->totalShortage));
+                }
             }
 
             // Créer le paiement

@@ -65,16 +65,25 @@
             </div>
         </div>
         <div class="col-xl-2 col-md-4 col-6 mb-3">
-            <div class="card bg-gradient-dark">
+            <div class="card bg-gradient-secondary">
                 <div class="card-body p-3">
                     <div class="text-white">
-                        <p class="text-sm mb-0 text-uppercase font-weight-bold opacity-7">Valeur totale</p>
-                        <h5 class="font-weight-bolder text-white mb-0">{{ number_format($stats['total_value'], 0, ',', ' ') }} FC</h5>
+                        <p class="text-sm mb-0 text-uppercase font-weight-bold opacity-7">À renouveler</p>
+                        <h4 class="font-weight-bolder text-white mb-0">{{ $stats['needs_renewal'] ?? 0 }}</h4>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Alerte équipements à renouveler --}}
+    @if(($stats['needs_renewal'] ?? 0) > 0)
+    <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>{{ $stats['needs_renewal'] }}</strong> équipement(s) approche(nt) de leur fin de vie et doivent être renouvelés.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    @endif
 
     {{-- Liste des équipements --}}
     <div class="card">
@@ -83,18 +92,23 @@
                 <div>
                     <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Équipements du Salon</h5>
                 </div>
-                <button class="btn btn-primary mb-0" wire:click="openForm">
-                    <i class="fas fa-plus me-2"></i>Nouvel équipement
-                </button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success mb-0" wire:click="exportExcel">
+                        <i class="fas fa-file-excel me-2"></i>Exporter Excel
+                    </button>
+                    <button class="btn btn-primary mb-0" wire:click="openForm">
+                        <i class="fas fa-plus me-2"></i>Nouvel équipement
+                    </button>
+                </div>
             </div>
         </div>
         <div class="card-body">
             {{-- Filtres --}}
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <input type="text" class="form-control" placeholder="Rechercher..." wire:model.live.debounce.300ms="search">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" wire:model.live="filterCategory">
                         <option value="">Toutes catégories</option>
                         @foreach($categoryLabels as $key => $label)
@@ -102,7 +116,15 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <select class="form-select" wire:model.live="filterSubCategory" {{ empty($filterCategory) ? 'disabled' : '' }}>
+                        <option value="">Toutes sous-catégories</option>
+                        @foreach($filterSubCategories as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <select class="form-select" wire:model.live="filterStatus">
                         <option value="">Tous statuts</option>
                         @foreach($statusLabels as $key => $label)
@@ -112,7 +134,7 @@
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" wire:model.live="filterCondition">
-                        <option value="">Toutes conditions</option>
+                        <option value="">Tous états</option>
                         @foreach($conditionLabels as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
@@ -125,19 +147,24 @@
                 <table class="table align-items-center mb-0">
                     <thead>
                         <tr>
-                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Équipement</th>
-                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Catégorie</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Sous-catégorie</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Équipement</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">Statut</th>
-                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-md-table-cell">État</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-md-table-cell">Amortissement</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-lg-table-cell">Assigné à</th>
-                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 d-none d-xl-table-cell">Proch. maintenance</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 150px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($equipmentList as $eq)
-                            <tr>
+                            <tr class="{{ $eq->needs_renewal ? 'table-warning' : '' }}">
                                 <td class="ps-3">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-sm font-weight-bold">{{ $eq->sub_category_label }}</span>
+                                        <span class="text-xs text-muted">{{ $eq->category_label }}</span>
+                                    </div>
+                                </td>
+                                <td>
                                     <div class="d-flex flex-column">
                                         <span class="text-sm font-weight-bold">{{ $eq->name }}</span>
                                         @if($eq->code)
@@ -148,29 +175,34 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="text-sm">{{ $eq->category_label }}</span>
-                                </td>
                                 <td class="text-center">
                                     <span class="badge bg-{{ $eq->status_color }}">{{ $eq->status_label }}</span>
+                                    @if($eq->needs_maintenance)
+                                        <br><span class="badge bg-warning text-dark mt-1"><i class="fas fa-wrench me-1"></i>Maint.</span>
+                                    @endif
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
-                                    <span class="text-sm">{{ $eq->condition_label }}</span>
+                                    @if($eq->lifespan_months)
+                                        <div class="d-flex flex-column align-items-center">
+                                            <div class="progress w-100" style="height: 6px; max-width: 80px;">
+                                                <div class="progress-bar {{ $eq->is_amortized ? 'bg-danger' : ($eq->needs_renewal ? 'bg-warning' : 'bg-success') }}"
+                                                     style="width: {{ $eq->amortization_percent }}%"></div>
+                                            </div>
+                                            <span class="text-xs {{ $eq->is_amortized ? 'text-danger' : ($eq->needs_renewal ? 'text-warning' : '') }}">
+                                                {{ $eq->amortization_percent }}%
+                                                @if($eq->is_amortized)
+                                                    <i class="fas fa-exclamation-circle ms-1"></i>
+                                                @elseif($eq->remaining_months !== null)
+                                                    ({{ $eq->remaining_months }} mois)
+                                                @endif
+                                            </span>
+                                        </div>
+                                    @else
+                                        <span class="text-xs text-muted">—</span>
+                                    @endif
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <span class="text-sm">{{ $eq->assignedUser->name ?? '—' }}</span>
-                                </td>
-                                <td class="d-none d-xl-table-cell">
-                                    @if($eq->next_maintenance)
-                                        <span class="text-sm {{ $eq->needs_maintenance ? 'text-danger font-weight-bold' : '' }}">
-                                            {{ $eq->next_maintenance->format('d/m/Y') }}
-                                            @if($eq->needs_maintenance)
-                                                <i class="fas fa-exclamation-triangle text-danger ms-1"></i>
-                                            @endif
-                                        </span>
-                                    @else
-                                        <span class="text-sm text-muted">—</span>
-                                    @endif
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-1">
@@ -193,7 +225,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
+                                <td colspan="6" class="text-center py-4 text-muted">
                                     <i class="fas fa-tools" style="font-size: 48px;"></i>
                                     <p class="mt-2 mb-0">Aucun équipement enregistré</p>
                                 </td>
@@ -236,7 +268,7 @@
 
                             <div class="col-md-4">
                                 <label class="form-label">Catégorie <span class="text-danger">*</span></label>
-                                <select class="form-select" wire:model="category">
+                                <select class="form-select" wire:model.live="category">
                                     <option value="">-- Sélectionner --</option>
                                     @foreach($categoryLabels as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
@@ -245,14 +277,24 @@
                                 @error('category') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
                             <div class="col-md-4">
+                                <label class="form-label">Sous-catégorie</label>
+                                <select class="form-select" wire:model="sub_category" {{ empty($category) ? 'disabled' : '' }}>
+                                    <option value="">-- Sélectionner --</option>
+                                    @foreach($subCategories as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sub_category') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label">Marque</label>
                                 <input type="text" class="form-control" wire:model="brand" placeholder="Ex: Babyliss">
                             </div>
+
                             <div class="col-md-4">
                                 <label class="form-label">Modèle</label>
                                 <input type="text" class="form-control" wire:model="model" placeholder="Ex: Pro 2000W">
                             </div>
-
                             <div class="col-md-4">
                                 <label class="form-label">Numéro de série</label>
                                 <input type="text" class="form-control" wire:model="serial_number" placeholder="Ex: SN123456789">
@@ -261,20 +303,26 @@
                                 <label class="form-label">Date d'achat</label>
                                 <input type="date" class="form-control" wire:model="purchase_date">
                             </div>
+
                             <div class="col-md-4">
                                 <label class="form-label">Prix d'achat (FC)</label>
                                 <input type="number" class="form-control" wire:model="purchase_price" min="0" step="100">
                             </div>
-
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label">Durée de vie (mois)</label>
+                                <input type="number" class="form-control" wire:model="lifespan_months" min="1" max="600" placeholder="Ex: 36">
+                                <small class="text-muted">Pour le calcul d'amortissement</small>
+                                @error('lifespan_months') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label">Fournisseur</label>
                                 <input type="text" class="form-control" wire:model="supplier" placeholder="Nom du fournisseur">
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label">Emplacement</label>
                                 <input type="text" class="form-control" wire:model="location" placeholder="Ex: Poste 3, Zone massage">
                             </div>
-
                             <div class="col-md-3">
                                 <label class="form-label">Statut <span class="text-danger">*</span></label>
                                 <select class="form-select" wire:model="status">
@@ -291,16 +339,16 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3">
+
+                            <div class="col-md-4">
                                 <label class="form-label">Fin de garantie</label>
                                 <input type="date" class="form-control" wire:model="warranty_expiry">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Proch. maintenance</label>
                                 <input type="date" class="form-control" wire:model="next_maintenance">
                             </div>
-
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Assigné à</label>
                                 <select class="form-select" wire:model="assigned_to">
                                     <option value="">-- Non assigné --</option>
@@ -309,12 +357,12 @@
                                     @endforeach
                                 </select>
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label">Description</label>
                                 <textarea class="form-control" wire:model="description" rows="2"></textarea>
                             </div>
-
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label">Notes</label>
                                 <textarea class="form-control" wire:model="notes" rows="2" placeholder="Informations supplémentaires..."></textarea>
                             </div>
@@ -419,6 +467,10 @@
                                         <td>{{ $selectedEquipment->category_label }}</td>
                                     </tr>
                                     <tr>
+                                        <td class="text-muted">Sous-catégorie</td>
+                                        <td>{{ $selectedEquipment->sub_category_label }}</td>
+                                    </tr>
+                                    <tr>
                                         <td class="text-muted">Marque / Modèle</td>
                                         <td>{{ $selectedEquipment->brand ?? '—' }} {{ $selectedEquipment->model }}</td>
                                     </tr>
@@ -437,7 +489,7 @@
                                 </table>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="text-primary mb-3">Informations d'achat</h6>
+                                <h6 class="text-primary mb-3">Informations d'achat & Amortissement</h6>
                                 <table class="table table-sm">
                                     <tr>
                                         <td class="text-muted" style="width: 40%;">Date d'achat</td>
@@ -447,6 +499,38 @@
                                         <td class="text-muted">Prix d'achat</td>
                                         <td>{{ $selectedEquipment->purchase_price ? number_format($selectedEquipment->purchase_price, 0, ',', ' ') . ' FC' : '—' }}</td>
                                     </tr>
+                                    <tr>
+                                        <td class="text-muted">Durée de vie</td>
+                                        <td>{{ $selectedEquipment->lifespan_months ? $selectedEquipment->lifespan_months . ' mois' : '—' }}</td>
+                                    </tr>
+                                    @if($selectedEquipment->lifespan_months)
+                                    <tr>
+                                        <td class="text-muted">Fin de vie prévue</td>
+                                        <td>
+                                            {{ $selectedEquipment->end_of_life_date?->format('d/m/Y') ?? '—' }}
+                                            @if($selectedEquipment->is_amortized)
+                                                <span class="badge bg-danger ms-1">Amorti</span>
+                                            @elseif($selectedEquipment->needs_renewal)
+                                                <span class="badge bg-warning ms-1">À renouveler</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Amortissement</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 8px;">
+                                                    <div class="progress-bar {{ $selectedEquipment->is_amortized ? 'bg-danger' : ($selectedEquipment->needs_renewal ? 'bg-warning' : 'bg-success') }}"
+                                                         style="width: {{ $selectedEquipment->amortization_percent }}%"></div>
+                                                </div>
+                                                <span class="text-sm">{{ $selectedEquipment->amortization_percent }}%</span>
+                                            </div>
+                                            @if($selectedEquipment->remaining_months !== null && !$selectedEquipment->is_amortized)
+                                                <small class="text-muted">{{ $selectedEquipment->remaining_months }} mois restants</small>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endif
                                     <tr>
                                         <td class="text-muted">Fournisseur</td>
                                         <td>{{ $selectedEquipment->supplier ?? '—' }}</td>

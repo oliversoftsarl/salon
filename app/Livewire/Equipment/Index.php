@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\EquipmentExport;
 
 class Index extends Component
 {
@@ -16,6 +18,7 @@ class Index extends Component
     // Filtres
     public string $search = '';
     public string $filterCategory = '';
+    public string $filterSubCategory = '';
     public string $filterStatus = '';
     public string $filterCondition = '';
 
@@ -25,11 +28,13 @@ class Index extends Component
     public string $name = '';
     public string $code = '';
     public string $category = '';
+    public string $sub_category = '';
     public string $brand = '';
     public string $model = '';
     public string $serial_number = '';
     public ?string $purchase_date = null;
     public ?float $purchase_price = null;
+    public ?int $lifespan_months = null;
     public string $supplier = '';
     public string $status = 'operational';
     public string $condition = 'good';
@@ -68,11 +73,13 @@ class Index extends Component
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50|unique:equipment,code,' . $this->editingId,
             'category' => 'required|string',
+            'sub_category' => 'nullable|string',
             'brand' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
             'serial_number' => 'nullable|string|max:255',
             'purchase_date' => 'nullable|date',
             'purchase_price' => 'nullable|numeric|min:0',
+            'lifespan_months' => 'nullable|integer|min:1|max:600',
             'supplier' => 'nullable|string|max:255',
             'status' => 'required|in:operational,maintenance,broken,retired',
             'condition' => 'required|in:new,good,fair,poor',
@@ -98,14 +105,46 @@ class Index extends Component
 
     public function getStatsProperty(): array
     {
+        $equipments = Equipment::all();
+
         return [
-            'total' => Equipment::count(),
-            'operational' => Equipment::where('status', 'operational')->count(),
-            'maintenance' => Equipment::where('status', 'maintenance')->count(),
-            'broken' => Equipment::where('status', 'broken')->count(),
-            'needs_maintenance' => Equipment::where('next_maintenance', '<=', now())->where('status', 'operational')->count(),
-            'total_value' => Equipment::sum('purchase_price'),
+            'total' => $equipments->count(),
+            'operational' => $equipments->where('status', 'operational')->count(),
+            'maintenance' => $equipments->where('status', 'maintenance')->count(),
+            'broken' => $equipments->where('status', 'broken')->count(),
+            'needs_maintenance' => $equipments->where('next_maintenance', '<=', now())->where('status', 'operational')->count(),
+            'needs_renewal' => $equipments->filter(fn($e) => $e->needs_renewal)->count(),
+            'total_value' => $equipments->sum('purchase_price'),
         ];
+    }
+
+    public function updatedCategory(): void
+    {
+        // Réinitialiser la sous-catégorie quand la catégorie change
+        $this->sub_category = '';
+    }
+
+    public function updatedFilterCategory(): void
+    {
+        // Réinitialiser le filtre de sous-catégorie quand la catégorie change
+        $this->filterSubCategory = '';
+        $this->resetPage();
+    }
+
+    public function getSubCategoriesProperty(): array
+    {
+        if (empty($this->category)) {
+            return [];
+        }
+        return Equipment::$subCategoryLabels[$this->category] ?? [];
+    }
+
+    public function getFilterSubCategoriesProperty(): array
+    {
+        if (empty($this->filterCategory)) {
+            return [];
+        }
+        return Equipment::$subCategoryLabels[$this->filterCategory] ?? [];
     }
 
     public function getEquipmentProperty()
@@ -121,8 +160,11 @@ class Index extends Component
                 });
             })
             ->when($this->filterCategory, fn($q) => $q->where('category', $this->filterCategory))
+            ->when($this->filterSubCategory, fn($q) => $q->where('sub_category', $this->filterSubCategory))
             ->when($this->filterStatus, fn($q) => $q->where('status', $this->filterStatus))
             ->when($this->filterCondition, fn($q) => $q->where('condition', $this->filterCondition))
+            ->orderBy('sub_category')
+            ->orderBy('category')
             ->orderBy('name')
             ->paginate(12);
     }
@@ -146,11 +188,13 @@ class Index extends Component
             $this->name = $equipment->name;
             $this->code = $equipment->code ?? '';
             $this->category = $equipment->category;
+            $this->sub_category = $equipment->sub_category ?? '';
             $this->brand = $equipment->brand ?? '';
             $this->model = $equipment->model ?? '';
             $this->serial_number = $equipment->serial_number ?? '';
             $this->purchase_date = $equipment->purchase_date?->format('Y-m-d');
             $this->purchase_price = $equipment->purchase_price;
+            $this->lifespan_months = $equipment->lifespan_months;
             $this->supplier = $equipment->supplier ?? '';
             $this->status = $equipment->status;
             $this->condition = $equipment->condition;
@@ -177,11 +221,13 @@ class Index extends Component
         $this->name = '';
         $this->code = '';
         $this->category = '';
+        $this->sub_category = '';
         $this->brand = '';
         $this->model = '';
         $this->serial_number = '';
         $this->purchase_date = now()->format('Y-m-d');
         $this->purchase_price = null;
+        $this->lifespan_months = null;
         $this->supplier = '';
         $this->status = 'operational';
         $this->condition = 'good';
@@ -201,11 +247,13 @@ class Index extends Component
             'name' => $this->name,
             'code' => $this->code ?: null,
             'category' => $this->category,
+            'sub_category' => $this->sub_category ?: null,
             'brand' => $this->brand ?: null,
             'model' => $this->model ?: null,
             'serial_number' => $this->serial_number ?: null,
             'purchase_date' => $this->purchase_date ?: null,
             'purchase_price' => $this->purchase_price ?: null,
+            'lifespan_months' => $this->lifespan_months ?: null,
             'supplier' => $this->supplier ?: null,
             'status' => $this->status,
             'condition' => $this->condition,
@@ -360,6 +408,16 @@ class Index extends Component
         return $user && $user->role === 'admin';
     }
 
+    public function exportExcel()
+    {
+        return Excel::download(new EquipmentExport(
+            $this->filterCategory,
+            $this->filterSubCategory,
+            $this->filterStatus,
+            $this->filterCondition
+        ), 'equipements_' . now()->format('Y-m-d_His') . '.xlsx');
+    }
+
     public function render()
     {
         return view('livewire.equipment.index', [
@@ -367,6 +425,9 @@ class Index extends Component
             'stats' => $this->stats,
             'staffList' => $this->staffList,
             'categoryLabels' => Equipment::$categoryLabels,
+            'subCategoryLabels' => Equipment::$subCategoryLabels,
+            'subCategories' => $this->subCategories,
+            'filterSubCategories' => $this->filterSubCategories,
             'statusLabels' => Equipment::$statusLabels,
             'statusColors' => Equipment::$statusColors,
             'conditionLabels' => Equipment::$conditionLabels,

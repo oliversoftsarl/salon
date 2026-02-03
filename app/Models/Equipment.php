@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Equipment extends Model
 {
@@ -12,11 +13,13 @@ class Equipment extends Model
         'name',
         'code',
         'category',
+        'sub_category',
         'brand',
         'model',
         'serial_number',
         'purchase_date',
         'purchase_price',
+        'lifespan_months',
         'supplier',
         'status',
         'condition',
@@ -36,30 +39,66 @@ class Equipment extends Model
         'last_maintenance' => 'date',
         'next_maintenance' => 'date',
         'purchase_price' => 'decimal:2',
+        'lifespan_months' => 'integer',
     ];
 
     // Labels pour les catégories
     public static array $categoryLabels = [
-        'dryer' => 'Sèche-cheveux',
-        'clipper' => 'Tondeuse',
-        'chair' => 'Fauteuil',
-        'mirror' => 'Miroir',
-        'steamer' => 'Vapeur / Steamer',
-        'wash_station' => 'Bac à shampoing',
-        'trolley' => 'Chariot / Desserte',
-        'hood_dryer' => 'Casque séchoir',
-        'straightener' => 'Lisseur',
-        'curler' => 'Fer à boucler',
-        'massage_table' => 'Table de massage',
-        'manicure_table' => 'Table de manucure',
-        'pedicure_chair' => 'Fauteuil pédicure',
-        'uv_sterilizer' => 'Stérilisateur UV',
-        'air_conditioner' => 'Climatiseur',
-        'fan' => 'Ventilateur',
-        'tv' => 'Télévision',
-        'speaker' => 'Enceinte / Haut-parleur',
-        'computer' => 'Ordinateur / Caisse',
+        'hair_equipment' => 'Équipements Coiffure',
+        'beauty_equipment' => 'Équipements Beauté/Esthétique',
+        'massage_equipment' => 'Équipements Massage',
+        'furniture' => 'Mobilier',
+        'electronics' => 'Électronique/Informatique',
+        'climate' => 'Climatisation/Ventilation',
         'other' => 'Autre',
+    ];
+
+    // Labels pour les sous-catégories par catégorie
+    public static array $subCategoryLabels = [
+        'hair_equipment' => [
+            'dryer' => 'Sèche-cheveux',
+            'clipper' => 'Tondeuse',
+            'straightener' => 'Lisseur',
+            'curler' => 'Fer à boucler',
+            'hood_dryer' => 'Casque séchoir',
+            'steamer' => 'Vapeur / Steamer',
+            'wash_station' => 'Bac à shampoing',
+        ],
+        'beauty_equipment' => [
+            'manicure_table' => 'Table de manucure',
+            'pedicure_chair' => 'Fauteuil pédicure',
+            'uv_sterilizer' => 'Stérilisateur UV',
+            'uv_lamp' => 'Lampe UV/LED',
+            'wax_heater' => 'Chauffe-cire',
+        ],
+        'massage_equipment' => [
+            'massage_table' => 'Table de massage',
+            'massage_chair' => 'Fauteuil de massage',
+            'hot_stones' => 'Pierres chaudes',
+        ],
+        'furniture' => [
+            'chair' => 'Fauteuil coiffure',
+            'mirror' => 'Miroir',
+            'trolley' => 'Chariot / Desserte',
+            'reception_desk' => 'Bureau réception',
+            'waiting_chair' => 'Chaise d\'attente',
+            'storage' => 'Rangement/Étagère',
+        ],
+        'electronics' => [
+            'computer' => 'Ordinateur / Caisse',
+            'tv' => 'Télévision',
+            'speaker' => 'Enceinte / Haut-parleur',
+            'printer' => 'Imprimante',
+            'phone' => 'Téléphone',
+        ],
+        'climate' => [
+            'air_conditioner' => 'Climatiseur',
+            'fan' => 'Ventilateur',
+            'heater' => 'Chauffage',
+        ],
+        'other' => [
+            'other' => 'Autre',
+        ],
     ];
 
     // Labels pour les statuts
@@ -108,6 +147,12 @@ class Equipment extends Model
         return self::$categoryLabels[$this->category] ?? $this->category;
     }
 
+    public function getSubCategoryLabelAttribute(): string
+    {
+        $subCategories = self::$subCategoryLabels[$this->category] ?? [];
+        return $subCategories[$this->sub_category] ?? $this->sub_category ?? '-';
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return self::$statusLabels[$this->status] ?? $this->status;
@@ -131,6 +176,71 @@ class Equipment extends Model
     public function getNeedsMaintenanceAttribute(): bool
     {
         return $this->next_maintenance && $this->next_maintenance->isPast();
+    }
+
+    /**
+     * Calcule la date de fin de vie (amortissement)
+     */
+    public function getEndOfLifeDateAttribute(): ?Carbon
+    {
+        if (!$this->purchase_date || !$this->lifespan_months) {
+            return null;
+        }
+        return $this->purchase_date->copy()->addMonths($this->lifespan_months);
+    }
+
+    /**
+     * Vérifie si l'équipement doit être renouvelé (fin de vie atteinte ou proche)
+     */
+    public function getNeedsRenewalAttribute(): bool
+    {
+        $endOfLife = $this->end_of_life_date;
+        if (!$endOfLife) {
+            return false;
+        }
+        // Alerte si dans les 3 prochains mois ou dépassé
+        return $endOfLife->lte(now()->addMonths(3));
+    }
+
+    /**
+     * Vérifie si l'équipement est amorti (fin de vie dépassée)
+     */
+    public function getIsAmortizedAttribute(): bool
+    {
+        $endOfLife = $this->end_of_life_date;
+        if (!$endOfLife) {
+            return false;
+        }
+        return $endOfLife->isPast();
+    }
+
+    /**
+     * Retourne le pourcentage d'amortissement
+     */
+    public function getAmortizationPercentAttribute(): float
+    {
+        if (!$this->purchase_date || !$this->lifespan_months) {
+            return 0;
+        }
+
+        $monthsUsed = $this->purchase_date->diffInMonths(now());
+        $percent = ($monthsUsed / $this->lifespan_months) * 100;
+
+        return min(100, round($percent, 1));
+    }
+
+    /**
+     * Retourne les mois restants avant fin de vie
+     */
+    public function getRemainingMonthsAttribute(): ?int
+    {
+        $endOfLife = $this->end_of_life_date;
+        if (!$endOfLife) {
+            return null;
+        }
+
+        $months = now()->diffInMonths($endOfLife, false);
+        return max(0, $months);
     }
 
     // Scopes

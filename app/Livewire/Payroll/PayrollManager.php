@@ -52,8 +52,9 @@ class PayrollManager extends Component
 
     public function mount(): void
     {
-        $this->periodStart = now()->startOfWeek()->toDateString();
-        $this->periodEnd = now()->endOfWeek()->toDateString();
+        // Utiliser la semaine de paie (vendredi à jeudi)
+        $this->periodStart = StaffWeeklyRevenue::getPayWeekStart()->toDateString();
+        $this->periodEnd = StaffWeeklyRevenue::getPayWeekEnd()->toDateString();
     }
 
     public function updatedSearch(): void
@@ -84,9 +85,11 @@ class PayrollManager extends Component
     public function updatedPeriodStart(): void
     {
         if ($this->paymentType === 'weekly') {
-            $start = Carbon::parse($this->periodStart)->startOfWeek();
+            // Calculer le vendredi correspondant à la date saisie
+            $inputDate = Carbon::parse($this->periodStart);
+            $start = StaffWeeklyRevenue::getPayWeekStart($inputDate);
             $this->periodStart = $start->toDateString();
-            $this->periodEnd = $start->copy()->endOfWeek()->toDateString();
+            $this->periodEnd = $start->copy()->addDays(6)->toDateString();
         } else {
             $start = Carbon::parse($this->periodStart)->startOfMonth();
             $this->periodStart = $start->toDateString();
@@ -123,8 +126,9 @@ class PayrollManager extends Component
     protected function updatePeriodDates(): void
     {
         if ($this->paymentType === 'weekly') {
-            $this->periodStart = now()->startOfWeek()->toDateString();
-            $this->periodEnd = now()->endOfWeek()->toDateString();
+            // Semaine de paie : vendredi à jeudi
+            $this->periodStart = StaffWeeklyRevenue::getPayWeekStart()->toDateString();
+            $this->periodEnd = StaffWeeklyRevenue::getPayWeekEnd()->toDateString();
         } else {
             $this->periodStart = now()->startOfMonth()->toDateString();
             $this->periodEnd = now()->endOfMonth()->toDateString();

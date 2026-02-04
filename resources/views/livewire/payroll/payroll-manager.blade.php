@@ -240,15 +240,18 @@
                                     <div class="card mb-3">
                                         <div class="card-header pb-0">
                                             <h6 class="mb-0"><i class="ni ni-calendar-grid-58 me-2"></i>Période et Montants</h6>
+                                            @if($paymentType === 'weekly')
+                                                <small class="text-muted">Semaine de paie : Vendredi au Jeudi</small>
+                                            @endif
                                         </div>
                                         <div class="card-body">
                                             <div class="row g-3">
                                                 <div class="col-6">
-                                                    <label class="form-label">Début période</label>
+                                                    <label class="form-label">Début période (Vendredi)</label>
                                                     <input type="date" class="form-control" wire:model.live="periodStart">
                                                 </div>
                                                 <div class="col-6">
-                                                    <label class="form-label">Fin période</label>
+                                                    <label class="form-label">Fin période (Jeudi)</label>
                                                     <input type="date" class="form-control" wire:model="periodEnd" readonly>
                                                 </div>
                                                 <div class="col-6">

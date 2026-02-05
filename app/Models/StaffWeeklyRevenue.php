@@ -40,15 +40,15 @@ class StaffWeeklyRevenue extends Model
     /**
      * Calculer et enregistrer les recettes hebdomadaires pour un staff
      *
-     * Note: La semaine de paie va du vendredi au jeudi suivant.
+     * Note: La semaine de paie va du samedi au vendredi suivant.
      * Le target_amount (seuil) est le montant minimum que le coiffeur doit réaliser.
      * Si le coiffeur n'atteint pas ce seuil, la différence s'ajoute au cumul (dette).
      * Si le coiffeur dépasse le seuil, le cumul reste inchangé (la réduction se fait lors du paiement).
      */
     public static function calculateWeeklyRevenue(int $staffId, Carbon $weekStart): self
     {
-        // La semaine va du vendredi au jeudi suivant
-        $weekEnd = $weekStart->copy()->addDays(6); // vendredi + 6 jours = jeudi
+        // La semaine va du samedi au vendredi suivant
+        $weekEnd = $weekStart->copy()->addDays(6); // samedi + 6 jours = vendredi
         $year = $weekStart->year;
         $weekNumber = $weekStart->weekOfYear;
 
@@ -128,30 +128,26 @@ class StaffWeeklyRevenue extends Model
     }
 
     /**
-     * Obtenir le début de la semaine de paie (vendredi) pour une date donnée
-     * La semaine de paie va du vendredi au jeudi suivant
+     * Obtenir le début de la semaine de paie (samedi) pour une date donnée
+     * La semaine de paie va du samedi au vendredi suivant
      */
     public static function getPayWeekStart(?Carbon $date = null): Carbon
     {
         $date = $date ? $date->copy() : Carbon::now();
 
-        $dayOfWeek = $date->dayOfWeek; // 0 = dimanche, 5 = vendredi
+        $dayOfWeek = $date->dayOfWeek; // 0 = dimanche, 6 = samedi
 
-        if ($dayOfWeek === Carbon::FRIDAY) {
-            // C'est vendredi, on retourne cette date
+        if ($dayOfWeek === Carbon::SATURDAY) {
+            // C'est samedi, on retourne cette date
             return $date->startOfDay();
-        } elseif ($dayOfWeek === Carbon::SATURDAY) {
-            // Samedi : retourner au vendredi d'hier
-            return $date->subDay()->startOfDay();
         } else {
-            // Dimanche (0), Lundi (1), Mardi (2), Mercredi (3), Jeudi (4)
-            // Retourner au vendredi précédent
-            return $date->previous(Carbon::FRIDAY)->startOfDay();
+            // Retourner au samedi précédent
+            return $date->previous(Carbon::SATURDAY)->startOfDay();
         }
     }
 
     /**
-     * Obtenir la fin de la semaine de paie (jeudi) pour une date donnée
+     * Obtenir la fin de la semaine de paie (vendredi) pour une date donnée
      */
     public static function getPayWeekEnd(?Carbon $date = null): Carbon
     {

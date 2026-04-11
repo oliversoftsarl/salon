@@ -512,28 +512,55 @@
 
 @script
 <script>
-    // Fonction d'impression du reçu
+    /**
+     * Impression du reçu optimisée pour imprimante thermique GOLDEN GATE 80mm
+     * - Ouvre une fenêtre dédiée avec le contenu du reçu
+     * - Format papier 80mm, impression silencieuse
+     */
     function printReceipt() {
         const printContent = document.getElementById('receipt-printable');
         if (!printContent) return;
 
-        const printWindow = window.open('', '_blank', 'width=400,height=600');
+        const printWindow = window.open('', 'receipt_print', 'width=350,height=600,scrollbars=no,menubar=no,toolbar=no,location=no,status=no');
+        if (!printWindow) {
+            alert('Veuillez autoriser les popups pour imprimer le reçu.');
+            return;
+        }
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html lang="fr">
             <head>
-                <title>Reçu</title>
+                <meta charset="UTF-8">
+                <title>Reçu - Salon Gobel</title>
                 <style>
-                    body { margin: 0; padding: 0; }
-                    @page { margin: 0; size: 80mm auto; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        width: 80mm;
+                        margin: 0 auto;
+                        padding: 0;
+                        background: #fff;
+                        color: #000;
+                    }
+                    @page {
+                        size: 80mm auto;
+                        margin: 0;
+                    }
+                    @media print {
+                        body { width: 80mm; }
+                        .no-print { display: none !important; }
+                    }
                 </style>
             </head>
             <body>
                 ${printContent.innerHTML}
                 <script>
                     window.onload = function() {
-                        window.print();
-                        setTimeout(function() { window.close(); }, 500);
+                        setTimeout(function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        }, 300);
                     };
                 <\/script>
             </body>
@@ -542,20 +569,21 @@
         printWindow.document.close();
     }
 
-    // Écouter l'événement de transaction complétée pour auto-impression optionnele
+    // Écouter l'événement de transaction complétée → impression automatique sur GOLDEN GATE
     $wire.on('transaction-completed', (data) => {
-        // Notification sonore de succès (optionnel)
+        // Son de confirmation (bip caisse)
         try {
             const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGckAABnpeXl0YlAAABstPv/9KhKAABvuv//+7tZAABwvP//+8JjAABtvf//9sdrAABpu/r/8MlyAABltfP/6splAABhruz/58xYAABdrOX/4cxNAABZqd7/3MpCAABWpdf/18g4AABSnc//0sYvAABPlsf/zsUoAABMj7//ycQhAABIiLb/xMIaAABFgq3/v8ETAABCVKX/usAPAAA+b5z/tb8MAABaa5P/sb4JAAB2Z4n/rbwGAACSY4D/qbsEAACuX3b/pbkCAADLW2z/obsBAOznVmL/n7kAABB0UTj/nbgAADSPTAD/m7gAAFqrRwD/mbgAAICIQgD/l7gAAKZlPQD/lbgAAMxCOAD/k7gAAO0dNAD/kbgAABAI8P+OuAAA');
             audio.volume = 0.3;
             audio.play().catch(() => {});
         } catch (e) {}
 
-        // L'impression automatique est désactivée par défaut
-        // Décommentez la ligne ci-dessous pour l'activer
-        // setTimeout(() => printReceipt(), 800);
+        // ✅ Impression automatique après chaque vente (imprimante GOLDEN GATE)
+        // Délai de 800ms pour laisser le modal du reçu se charger
+        setTimeout(() => printReceipt(), 800);
     });
 
+    // Écouter l'événement d'impression manuelle
     $wire.on('print-receipt', () => {
         printReceipt();
     });

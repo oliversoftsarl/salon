@@ -508,26 +508,36 @@
             </div>
         </div>
     @endif
+
+    {{-- Iframe caché pour impression thermique GOLDEN GATE --}}
+    <iframe id="receipt-print-frame" style="position:fixed;top:-9999px;left:-9999px;width:80mm;height:0;border:none;visibility:hidden;"></iframe>
 </div>
 
 @script
 <script>
     /**
-     * Impression du reçu optimisée pour imprimante thermique GOLDEN GATE 80mm
-     * - Ouvre une fenêtre dédiée avec le contenu du reçu
-     * - Format papier 80mm, impression silencieuse
+     * Impression du reçu via iframe caché — Imprimante thermique GOLDEN GATE 80mm
+     * Pas de popup bloqué, impression directe.
      */
     function printReceipt() {
-        const printContent = document.getElementById('receipt-printable');
-        if (!printContent) return;
-
-        const printWindow = window.open('', 'receipt_print', 'width=350,height=600,scrollbars=no,menubar=no,toolbar=no,location=no,status=no');
-        if (!printWindow) {
-            alert('Veuillez autoriser les popups pour imprimer le reçu.');
+        const receiptEl = document.getElementById('receipt-printable');
+        if (!receiptEl) {
+            console.warn('[POS] Contenu du reçu introuvable');
             return;
         }
 
-        printWindow.document.write(`
+        const iframe = document.getElementById('receipt-print-frame');
+        if (!iframe) {
+            console.warn('[POS] Iframe d\'impression introuvable');
+            // Fallback: impression de la page entière
+            window.print();
+            return;
+        }
+
+        const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+        const doc = iframeDoc.document || iframeDoc;
+
+        const receiptHTML = `
             <!DOCTYPE html>
             <html lang="fr">
             <head>
@@ -535,42 +545,88 @@
                 <title>Reçu - Salon Gobel</title>
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: 'Courier New', Courier, monospace;
+                    html, body {
                         width: 80mm;
-                        margin: 0 auto;
+                        margin: 0;
                         padding: 0;
                         background: #fff;
                         color: #000;
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 12px;
                     }
                     @page {
                         size: 80mm auto;
-                        margin: 0;
+                        margin: 0mm;
                     }
-                    @media print {
-                        body { width: 80mm; }
-                        .no-print { display: none !important; }
+                    .receipt-print {
+                        width: 72mm;
+                        max-width: 72mm;
+                        margin: 0 auto;
+                        padding: 2mm;
                     }
+                    .receipt-header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                    .receipt-logo { font-size: 22px; font-weight: 900; letter-spacing: 1px; margin: 0 0 2px 0; text-transform: uppercase; }
+                    .receipt-header p { margin: 1px 0; font-size: 10px; }
+                    .receipt-info { border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 6px; }
+                    .receipt-info p { margin: 1px 0; font-size: 11px; }
+                    .receipt-items { border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 6px; }
+                    .receipt-item { display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px; }
+                    .receipt-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+                    .receipt-item-qty { width: 35px; text-align: center; }
+                    .receipt-item-price { width: 75px; text-align: right; white-space: nowrap; }
+                    .receipt-totals { margin-bottom: 8px; }
+                    .receipt-total-line { display: flex; justify-content: space-between; margin: 2px 0; font-size: 12px; }
+                    .receipt-total-line.grand-total { font-weight: bold; font-size: 16px; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 6px 0; margin-top: 4px; }
+                    .receipt-footer { text-align: center; border-top: 1px dashed #000; padding-top: 8px; margin-top: 8px; }
+                    .receipt-footer p { margin: 2px 0; font-size: 10px; }
+                    .receipt-barcode { text-align: center; margin: 6px 0; font-size: 10px; letter-spacing: 2px; }
+                    .receipt-staff-detail { font-size: 9px; color: #333; margin-top: -1px; padding-left: 6px; }
+                    .receipt-cut-line { text-align: center; margin: 10px 0 0 0; font-size: 8px; letter-spacing: 3px; color: #999; }
+                    .no-print { display: none !important; }
                 </style>
             </head>
-            <body>
-                ${printContent.innerHTML}
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            setTimeout(function() { window.close(); }, 1000);
-                        }, 300);
-                    };
-                <\/script>
-            </body>
+            <body>${receiptEl.innerHTML}</body>
             </html>
-        `);
-        printWindow.document.close();
+        `;
+
+        doc.open();
+        doc.write(receiptHTML);
+        doc.close();
+
+        // Laisser l'iframe charger le contenu, puis imprimer
+        setTimeout(() => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                console.log('[POS] ✅ Impression envoyée vers GOLDEN GATE');
+            } catch (e) {
+                console.error('[POS] Erreur impression iframe, fallback window.print():', e);
+                window.print();
+            }
+        }, 400);
     }
 
-    // Écouter l'événement de transaction complétée → impression automatique sur GOLDEN GATE
-    $wire.on('transaction-completed', (data) => {
+    /**
+     * Attendre que le reçu apparaisse dans le DOM, puis imprimer
+     */
+    function waitForReceiptAndPrint(maxAttempts = 20) {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            const receiptEl = document.getElementById('receipt-printable');
+            if (receiptEl && receiptEl.innerHTML.trim().length > 50) {
+                clearInterval(interval);
+                console.log('[POS] Reçu détecté, lancement impression GOLDEN GATE...');
+                printReceipt();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                console.warn('[POS] Timeout: reçu non trouvé après', maxAttempts * 100, 'ms');
+            }
+        }, 100);
+    }
+
+    // ✅ Impression automatique après chaque vente (imprimante GOLDEN GATE)
+    $wire.on('transaction-completed', () => {
         // Son de confirmation (bip caisse)
         try {
             const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGckAABnpeXl0YlAAABstPv/9KhKAABvuv//+7tZAABwvP//+8JjAABtvf//9sdrAABpu/r/8MlyAABltfP/6splAABhruz/58xYAABdrOX/4cxNAABZqd7/3MpCAABWpdf/18g4AABSnc//0sYvAABPlsf/zsUoAABMj7//ycQhAABIiLb/xMIaAABFgq3/v8ETAABCVKX/usAPAAA+b5z/tb8MAABaa5P/sb4JAAB2Z4n/rbwGAACSY4D/qbsEAACuX3b/pbkCAADLW2z/obsBAOznVmL/n7kAABB0UTj/nbgAADSPTAD/m7gAAFqrRwD/mbgAAICIQgD/l7gAAKZlPQD/lbgAAMxCOAD/k7gAAO0dNAD/kbgAABAI8P+OuAAA');
@@ -578,12 +634,11 @@
             audio.play().catch(() => {});
         } catch (e) {}
 
-        // ✅ Impression automatique après chaque vente (imprimante GOLDEN GATE)
-        // Délai de 800ms pour laisser le modal du reçu se charger
-        setTimeout(() => printReceipt(), 800);
+        // Attendre que Livewire ait fini de rendre le reçu, puis imprimer
+        waitForReceiptAndPrint();
     });
 
-    // Écouter l'événement d'impression manuelle
+    // Impression manuelle (bouton "Imprimer")
     $wire.on('print-receipt', () => {
         printReceipt();
     });

@@ -485,7 +485,7 @@
                         <button type="button" class="btn btn-outline-secondary px-3" wire:click="closeReceipt">
                             <i class="ni ni-fat-remove me-1"></i>Fermer
                         </button>
-                        <button type="button" class="btn btn-primary px-3" onclick="printReceipt()">
+                        <button type="button" class="btn btn-primary px-3" onclick="openPrintDialog()">
                             <i class="ni ni-single-copy-04 me-1"></i>Imprimer
                         </button>
                     </div>
@@ -494,89 +494,75 @@
         </div>
     @endif
 
-    {{-- Iframe caché pour impression POS-58-Series (72mm) --}}
-    <iframe id="receipt-print-frame" style="position:fixed;top:-9999px;left:-9999px;width:72mm;height:0;border:none;visibility:hidden;"></iframe>
 </div>
+
+{{-- Script d'impression global (hors @script Livewire pour être accessible via onclick) --}}
+<script>
+    window.openPrintDialog = function() {
+        var receiptEl = document.getElementById('receipt-printable');
+        if (!receiptEl) {
+            alert('Reçu introuvable. Veuillez réessayer.');
+            return;
+        }
+
+        var content = receiptEl.innerHTML;
+
+        var printWindow = window.open('', 'receipt_print', 'width=400,height=650,scrollbars=yes,resizable=yes');
+        if (!printWindow) {
+            alert('Popup bloquée par le navigateur. Autorisez les popups pour ce site puis réessayez.');
+            return;
+        }
+
+        var html = '<!DOCTYPE html>' +
+            '<html lang="fr"><head><meta charset="UTF-8">' +
+            '<title>Reçu - Salon Gobel</title>' +
+            '<style>' +
+            '*{margin:0;padding:0;box-sizing:border-box}' +
+            'html,body{width:72mm;margin:0 auto;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:11px;line-height:1.3}' +
+            '@page{size:72mm auto;margin:0}' +
+            '@media print{html,body{width:72mm;margin:0;padding:0}}' +
+            '.receipt-print{width:62mm;max-width:62mm;margin:0 auto;padding:2mm 1mm}' +
+            '.receipt-header{text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px}' +
+            '.receipt-logo{font-size:16px;font-weight:900;margin:0 0 2px 0;text-transform:uppercase}' +
+            '.receipt-header p{margin:1px 0;font-size:9px}' +
+            '.receipt-info{border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}' +
+            '.receipt-info p{margin:1px 0;font-size:9px}' +
+            '.receipt-items{border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}' +
+            '.receipt-item{display:flex;justify-content:space-between;margin:2px 0;font-size:10px}' +
+            '.receipt-item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}' +
+            '.receipt-item-qty{width:25px;text-align:center}' +
+            '.receipt-item-price{width:60px;text-align:right;white-space:nowrap;font-size:9px}' +
+            '.receipt-totals{margin-bottom:6px}' +
+            '.receipt-total-line{display:flex;justify-content:space-between;margin:2px 0;font-size:10px}' +
+            '.receipt-total-line.grand-total{font-weight:bold;font-size:13px;border-top:1px solid #000;border-bottom:1px solid #000;padding:4px 0;margin-top:3px}' +
+            '.receipt-footer{text-align:center;border-top:1px dashed #000;padding-top:6px;margin-top:6px}' +
+            '.receipt-footer p{margin:1px 0;font-size:9px}' +
+            '.receipt-barcode{text-align:center;margin:4px 0;font-size:8px;letter-spacing:1px}' +
+            '.receipt-staff-detail{font-size:8px;color:#333;margin-top:-1px;padding-left:4px}' +
+            '.receipt-cut-line{text-align:center;margin:6px 0 0;font-size:7px;letter-spacing:2px;color:#999}' +
+            '</style></head><body>' + content + '</body></html>';
+
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        printWindow.onload = function() {
+            setTimeout(function() {
+                printWindow.focus();
+                printWindow.print();
+            }, 400);
+        };
+
+        printWindow.onafterprint = function() {
+            printWindow.close();
+        };
+    };
+</script>
 
 @script
 <script>
     /**
-     * Impression reçu via iframe — POS-58-Series (largeur papier 72mm)
-     */
-    function printReceipt() {
-        const receiptEl = document.getElementById('receipt-printable');
-        if (!receiptEl) {
-            console.warn('[POS] Contenu du reçu introuvable');
-            return;
-        }
-
-        const iframe = document.getElementById('receipt-print-frame');
-        if (!iframe) {
-            console.warn('[POS] Iframe introuvable, fallback');
-            window.print();
-            return;
-        }
-
-        const iframeDoc = iframe.contentWindow || iframe.contentDocument;
-        const doc = iframeDoc.document || iframeDoc;
-
-        const receiptHTML = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Reçu</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{
-    width:72mm;margin:0;padding:0;
-    background:#fff;color:#000;
-    font-family:'Courier New',Courier,monospace;
-    font-size:11px;line-height:1.3;
-}
-@page{size:72mm auto;margin:0}
-.receipt-print{width:62mm;max-width:62mm;margin:0 auto;padding:2mm 1mm}
-.receipt-header{text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px}
-.receipt-logo{font-size:16px;font-weight:900;margin:0 0 2px 0;text-transform:uppercase}
-.receipt-header p{margin:1px 0;font-size:9px}
-.receipt-info{border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}
-.receipt-info p{margin:1px 0;font-size:9px}
-.receipt-items{border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}
-.receipt-item{display:flex;justify-content:space-between;margin:2px 0;font-size:10px}
-.receipt-item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
-.receipt-item-qty{width:25px;text-align:center}
-.receipt-item-price{width:60px;text-align:right;white-space:nowrap;font-size:9px}
-.receipt-totals{margin-bottom:6px}
-.receipt-total-line{display:flex;justify-content:space-between;margin:2px 0;font-size:10px}
-.receipt-total-line.grand-total{font-weight:bold;font-size:13px;border-top:1px solid #000;border-bottom:1px solid #000;padding:4px 0;margin-top:3px}
-.receipt-footer{text-align:center;border-top:1px dashed #000;padding-top:6px;margin-top:6px}
-.receipt-footer p{margin:1px 0;font-size:9px}
-.receipt-barcode{text-align:center;margin:4px 0;font-size:8px;letter-spacing:1px}
-.receipt-staff-detail{font-size:8px;color:#333;margin-top:-1px;padding-left:4px}
-.receipt-cut-line{text-align:center;margin:6px 0 0;font-size:7px;letter-spacing:2px;color:#999}
-.no-print{display:none!important}
-</style>
-</head>
-<body>${receiptEl.innerHTML}</body>
-</html>`;
-
-        doc.open();
-        doc.write(receiptHTML);
-        doc.close();
-
-        setTimeout(() => {
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                console.log('[POS] ✅ Impression envoyée vers POS-58-Series');
-            } catch (e) {
-                console.error('[POS] Erreur iframe:', e);
-                window.print();
-            }
-        }, 500);
-    }
-
-    /**
-     * Attendre que le reçu soit rendu dans le DOM puis imprimer
+     * Attendre que le reçu soit rendu dans le DOM puis ouvrir l'impression
      */
     function waitForReceiptAndPrint(maxAttempts = 30) {
         let attempts = 0;
@@ -585,18 +571,19 @@ html,body{
             const el = document.getElementById('receipt-printable');
             if (el && el.innerHTML.trim().length > 100) {
                 clearInterval(interval);
-                console.log('[POS] Reçu détecté, impression POS-58...');
-                setTimeout(() => printReceipt(), 200);
+                setTimeout(() => {
+                    if (typeof window.openPrintDialog === 'function') {
+                        window.openPrintDialog();
+                    }
+                }, 400);
             } else if (attempts >= maxAttempts) {
                 clearInterval(interval);
-                console.warn('[POS] Timeout: reçu non trouvé');
             }
-        }, 150);
+        }, 200);
     }
 
-    // ✅ Impression automatique après chaque vente via POS-58-Series
+    // ✅ Après chaque vente : bip + ouverture automatique du dialogue d'impression
     $wire.on('transaction-completed', () => {
-        // Bip de confirmation
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
@@ -609,9 +596,11 @@ html,body{
         waitForReceiptAndPrint();
     });
 
-    // Impression manuelle
+    // Impression manuelle via événement Livewire
     $wire.on('print-receipt', () => {
-        printReceipt();
+        if (typeof window.openPrintDialog === 'function') {
+            window.openPrintDialog();
+        }
     });
 </script>
 @endscript

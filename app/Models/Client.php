@@ -12,7 +12,7 @@ class Client extends Model
         'first_name', 'last_name', 'name', 'names',
         'email',
         'phone', 'phone_number',
-        'birthdate', 'gender', 'loyalty_point', 'notes',
+        'birthdate', 'gender', 'loyalty_points', 'loyalty_point', 'notes',
         'publish_consent',
     ];
 

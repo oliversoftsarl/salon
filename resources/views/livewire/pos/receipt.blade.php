@@ -1,18 +1,6 @@
 {{-- Reçu d'impression - Optimisé pour POS-58-Series (72mm) --}}
 <div id="receipt-content" class="receipt-print">
     <style>
-        @media print {
-            @page {
-                size: 72mm auto;
-                margin: 0;
-            }
-            body * { visibility: hidden; }
-            #receipt-modal, #receipt-modal * { visibility: visible; }
-            #receipt-modal {
-                position: absolute; left: 0; top: 0; width: 72mm;
-            }
-            .no-print { display: none !important; }
-        }
 
         .receipt-print {
             font-family: 'Courier New', Courier, monospace;

@@ -119,10 +119,10 @@
     </style>
 
     <div class="receipt-header">
-        <div class="receipt-logo">SALON GOBEL</div>
+        <div class="receipt-logo">SALON GoBeL</div>
         <p><strong>Ets Gobel</strong></p>
         <p>Goma, c. Karisimbi</p>
-        <p>Tél: +243 970 407 747</p>
+        <p>Tél: +243 990 378 202</p>
     </div>
 
     <div class="receipt-info">

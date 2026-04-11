@@ -505,22 +505,17 @@
             return;
         }
 
-        var content = receiptEl.innerHTML;
+        // Cloner le contenu et retirer tous les <style> internes pour éviter les conflits
+        var clone = receiptEl.cloneNode(true);
+        var inlineStyles = clone.querySelectorAll('style');
+        inlineStyles.forEach(function(s) { s.remove(); });
+        var content = clone.innerHTML;
 
-        var printWindow = window.open('', 'receipt_print', 'width=400,height=650,scrollbars=yes,resizable=yes');
-        if (!printWindow) {
-            alert('Popup bloquée par le navigateur. Autorisez les popups pour ce site puis réessayez.');
-            return;
-        }
-
-        var html = '<!DOCTYPE html>' +
-            '<html lang="fr"><head><meta charset="UTF-8">' +
-            '<title>Reçu - Salon Gobel</title>' +
-            '<style>' +
+        var printStyles =
             '*{margin:0;padding:0;box-sizing:border-box}' +
-            'html,body{width:72mm;margin:0 auto;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:11px;line-height:1.3}' +
+            'html,body{width:72mm;margin:0 auto;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:11px;line-height:1.3;visibility:visible}' +
             '@page{size:72mm auto;margin:0}' +
-            '@media print{html,body{width:72mm;margin:0;padding:0}}' +
+            '@media print{html,body{width:72mm;margin:0;padding:0}*{visibility:visible!important}}' +
             '.receipt-print{width:62mm;max-width:62mm;margin:0 auto;padding:2mm 1mm}' +
             '.receipt-header{text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px}' +
             '.receipt-logo{font-size:16px;font-weight:900;margin:0 0 2px 0;text-transform:uppercase}' +
@@ -539,23 +534,51 @@
             '.receipt-footer p{margin:1px 0;font-size:9px}' +
             '.receipt-barcode{text-align:center;margin:4px 0;font-size:8px;letter-spacing:1px}' +
             '.receipt-staff-detail{font-size:8px;color:#333;margin-top:-1px;padding-left:4px}' +
-            '.receipt-cut-line{text-align:center;margin:6px 0 0;font-size:7px;letter-spacing:2px;color:#999}' +
-            '</style></head><body>' + content + '</body></html>';
+            '.receipt-cut-line{text-align:center;margin:6px 0 0;font-size:7px;letter-spacing:2px;color:#999}';
 
-        printWindow.document.open();
-        printWindow.document.write(html);
-        printWindow.document.close();
+        // Créer un iframe caché pour l'impression (plus fiable que window.open)
+        var existingFrame = document.getElementById('receipt-print-frame');
+        if (existingFrame) existingFrame.remove();
 
-        printWindow.onload = function() {
+        var iframe = document.createElement('iframe');
+        iframe.id = 'receipt-print-frame';
+        iframe.style.cssText = 'position:fixed;top:-10000px;left:-10000px;width:72mm;height:0;border:none;';
+        document.body.appendChild(iframe);
+
+        var doc = iframe.contentWindow || iframe.contentDocument;
+        if (doc.document) doc = doc.document;
+
+        var html = '<!DOCTYPE html>' +
+            '<html lang="fr"><head><meta charset="UTF-8">' +
+            '<title>Reçu - Salon Gobel</title>' +
+            '<style>' + printStyles + '</style>' +
+            '</head><body>' + content + '</body></html>';
+
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        // Attendre le rendu puis imprimer
+        setTimeout(function() {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch(e) {
+                // Fallback: window.open si l'iframe échoue
+                var w = window.open('', '_blank', 'width=400,height=650');
+                if (w) {
+                    w.document.open();
+                    w.document.write(html);
+                    w.document.close();
+                    w.onload = function() { w.focus(); w.print(); };
+                }
+            }
+            // Nettoyer l'iframe après impression
             setTimeout(function() {
-                printWindow.focus();
-                printWindow.print();
-            }, 400);
-        };
-
-        printWindow.onafterprint = function() {
-            printWindow.close();
-        };
+                var f = document.getElementById('receipt-print-frame');
+                if (f) f.remove();
+            }, 3000);
+        }, 500);
     };
 </script>
 

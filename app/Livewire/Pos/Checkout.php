@@ -138,11 +138,10 @@ class Checkout extends Component
     {
         $this->validate([
             'newClient_name'  => ['required', 'string', 'max:255'],
-            'newClient_email' => ['nullable', 'email', 'max:255', Rule::unique('clients', 'email')],
+            'newClient_email' => ['nullable', 'email', 'max:255', Rule::unique('clients', 'email')->ignore(null)],
             'newClient_phone' => ['nullable', 'string', 'max:50'],
             'newClient_birthdate' => ['nullable', 'date'],
             'newClient_gender' => ['nullable', 'string', 'max:16'],
-            'newClient_loyalty_point' => ['nullable', 'integer', 'min:0'],
             'newClient_notes' => ['nullable', 'string'],
             'newClient_publish_consent' => ['boolean'],
         ]);
@@ -154,10 +153,10 @@ class Checkout extends Component
         if (in_array('first_name', $cols, true)) {
             $parts = preg_split('/\s+/', trim($this->newClient_name));
             $first = $parts[0] ?? $this->newClient_name;
-            $last  = isset($parts[1]) ? implode(' ', array_slice($parts, 1)) : null;
+            $last  = isset($parts[1]) ? implode(' ', array_slice($parts, 1)) : '';
             $data['first_name'] = $first;
             if (in_array('last_name', $cols, true)) {
-                $data['last_name'] = $last;
+                $data['last_name'] = $last ?: '';
             }
         } elseif (in_array('name', $cols, true)) {
             $data['name'] = $this->newClient_name;
@@ -166,22 +165,24 @@ class Checkout extends Component
         }
 
         if (in_array('email', $cols, true)) {
-            $data['email'] = $this->newClient_email;
+            $data['email'] = $this->newClient_email ?: null;
         }
         if (in_array('phone', $cols, true)) {
-            $data['phone'] = $this->newClient_phone;
+            $data['phone'] = $this->newClient_phone ?: '';
         } elseif (in_array('phone_number', $cols, true)) {
-            $data['phone_number'] = $this->newClient_phone;
+            $data['phone_number'] = $this->newClient_phone ?: '';
         }
 
         if (in_array('birthdate', $cols, true)) {
             $data['birthdate'] = $this->newClient_birthdate ?: null;
         }
         if (in_array('gender', $cols, true)) {
-            $data['gender'] = $this->newClient_gender ?: null;
+            $data['gender'] = $this->newClient_gender ?: 'other';
         }
-        if (in_array('loyalty_point', $cols, true)) {
-            $data['loyalty_point'] = (int)($this->newClient_loyalty_point ?? 0);
+        if (in_array('loyalty_points', $cols, true)) {
+            $data['loyalty_points'] = 0;
+        } elseif (in_array('loyalty_point', $cols, true)) {
+            $data['loyalty_point'] = 0;
         }
         if (in_array('notes', $cols, true)) {
             $data['notes'] = $this->newClient_notes ?: null;
@@ -190,22 +191,26 @@ class Checkout extends Component
             $data['publish_consent'] = $this->newClient_publish_consent;
         }
 
-        $client = Client::create($data);
+        try {
+            $client = Client::create($data);
 
-        $this->client_id = $client->id;
-        $this->showNewClient = false;
+            $this->client_id = $client->id;
+            $this->showNewClient = false;
 
-        // reset form
-        $this->newClient_name = '';
-        $this->newClient_email = null;
-        $this->newClient_phone = null;
-        $this->newClient_birthdate = null;
-        $this->newClient_gender = null;
-        $this->newClient_notes = null;
-        $this->newClient_loyalty_point = 0;
-        $this->newClient_publish_consent = false;
+            // reset form
+            $this->newClient_name = '';
+            $this->newClient_email = null;
+            $this->newClient_phone = null;
+            $this->newClient_birthdate = null;
+            $this->newClient_gender = null;
+            $this->newClient_notes = null;
+            $this->newClient_loyalty_point = 0;
+            $this->newClient_publish_consent = false;
 
-        session()->flash('success', 'Client créé et sélectionné.');
+            session()->flash('success', 'Client créé et sélectionné.');
+        } catch (\Exception $e) {
+            $this->addError('newClient_name', 'Erreur lors de la création: ' . $e->getMessage());
+        }
     }
 
     private function buildClientDataFromInputs(): array

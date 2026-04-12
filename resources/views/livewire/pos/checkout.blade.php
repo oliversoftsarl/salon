@@ -511,30 +511,32 @@
         inlineStyles.forEach(function(s) { s.remove(); });
         var content = clone.innerHTML;
 
+        // Styles optimisés pour impression POS 72mm ET PDF/imprimante classique
+        // On utilise width:100% pour remplir la largeur du papier (le pilote POS gère 72mm)
+        // Font sizes en pt pour un rendu fiable à l'impression
         var printStyles =
             '*{margin:0;padding:0;box-sizing:border-box}' +
-            'html,body{width:72mm;margin:0 auto;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:11px;line-height:1.3;visibility:visible}' +
-            '@page{size:72mm auto;margin:0}' +
-            '@media print{html,body{width:72mm;margin:0;padding:0}*{visibility:visible!important}}' +
-            '.receipt-print{width:62mm;max-width:62mm;margin:0 auto;padding:2mm 1mm}' +
-            '.receipt-header{text-align:center;border-bottom:1px dashed #000;padding-bottom:6px;margin-bottom:6px}' +
-            '.receipt-logo{font-size:16px;font-weight:900;margin:0 0 2px 0;text-transform:uppercase}' +
-            '.receipt-header p{margin:1px 0;font-size:9px}' +
-            '.receipt-info{border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}' +
-            '.receipt-info p{margin:1px 0;font-size:9px}' +
-            '.receipt-items{border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:5px}' +
-            '.receipt-item{display:flex;justify-content:space-between;margin:2px 0;font-size:10px}' +
-            '.receipt-item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}' +
-            '.receipt-item-qty{width:25px;text-align:center}' +
-            '.receipt-item-price{width:60px;text-align:right;white-space:nowrap;font-size:9px}' +
-            '.receipt-totals{margin-bottom:6px}' +
-            '.receipt-total-line{display:flex;justify-content:space-between;margin:2px 0;font-size:10px}' +
-            '.receipt-total-line.grand-total{font-weight:bold;font-size:13px;border-top:1px solid #000;border-bottom:1px solid #000;padding:4px 0;margin-top:3px}' +
-            '.receipt-footer{text-align:center;border-top:1px dashed #000;padding-top:6px;margin-top:6px}' +
-            '.receipt-footer p{margin:1px 0;font-size:9px}' +
-            '.receipt-barcode{text-align:center;margin:4px 0;font-size:8px;letter-spacing:1px}' +
-            '.receipt-staff-detail{font-size:8px;color:#333;margin-top:-1px;padding-left:4px}' +
-            '.receipt-cut-line{text-align:center;margin:6px 0 0;font-size:7px;letter-spacing:2px;color:#999}';
+            '@page{margin:0mm}' +
+            'html,body{width:100%;margin:0;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:10pt;line-height:1.4}' +
+            '.receipt-print{width:100%;margin:0;padding:3mm 2mm}' +
+            '.receipt-header{text-align:center;border-bottom:1px dashed #000;padding-bottom:4pt;margin-bottom:4pt}' +
+            '.receipt-logo{font-size:14pt;font-weight:900;margin:0 0 2pt 0;text-transform:uppercase}' +
+            '.receipt-header p{margin:1pt 0;font-size:8pt}' +
+            '.receipt-info{border-bottom:1px dashed #000;padding-bottom:4pt;margin-bottom:4pt}' +
+            '.receipt-info p{margin:1pt 0;font-size:8pt}' +
+            '.receipt-items{border-bottom:1px dashed #000;padding-bottom:4pt;margin-bottom:4pt}' +
+            '.receipt-item{display:flex;justify-content:space-between;margin:2pt 0;font-size:9pt}' +
+            '.receipt-item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+            '.receipt-item-qty{width:20pt;text-align:center;flex-shrink:0}' +
+            '.receipt-item-price{width:55pt;text-align:right;white-space:nowrap;flex-shrink:0;font-size:8pt}' +
+            '.receipt-totals{margin-bottom:4pt}' +
+            '.receipt-total-line{display:flex;justify-content:space-between;margin:2pt 0;font-size:9pt}' +
+            '.receipt-total-line.grand-total{font-weight:bold;font-size:12pt;border-top:1px solid #000;border-bottom:1px solid #000;padding:3pt 0;margin-top:3pt}' +
+            '.receipt-footer{text-align:center;border-top:1px dashed #000;padding-top:4pt;margin-top:4pt}' +
+            '.receipt-footer p{margin:1pt 0;font-size:8pt}' +
+            '.receipt-barcode{text-align:center;margin:3pt 0;font-size:7pt;letter-spacing:1pt}' +
+            '.receipt-staff-detail{font-size:7pt;color:#333;margin-top:0;padding-left:3pt}' +
+            '.receipt-cut-line{text-align:center;margin:4pt 0 0;font-size:7pt;letter-spacing:2pt;color:#666}';
 
         // Créer un iframe caché pour l'impression (plus fiable que window.open)
         var existingFrame = document.getElementById('receipt-print-frame');
@@ -542,7 +544,7 @@
 
         var iframe = document.createElement('iframe');
         iframe.id = 'receipt-print-frame';
-        iframe.style.cssText = 'position:fixed;top:-10000px;left:-10000px;width:72mm;height:0;border:none;';
+        iframe.style.cssText = 'position:fixed;top:-10000px;left:-10000px;width:1px;height:1px;border:none;';
         document.body.appendChild(iframe);
 
         var doc = iframe.contentWindow || iframe.contentDocument;

@@ -1,106 +1,105 @@
-{{-- Reçu d'impression - Optimisé pour POS-58-Series (72mm) --}}
+{{-- Reçu d'impression - Optimisé pour POS 72mm --}}
 <div id="receipt-content" class="receipt-print">
     <style>
-
         .receipt-print {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            width: 62mm;
-            max-width: 62mm;
+            font-size: 12px;
+            width: 100%;
+            max-width: 300px;
             margin: 0 auto;
-            padding: 2mm 1mm;
+            padding: 10px 8px;
             background: #fff;
             color: #000;
-            line-height: 1.3;
+            line-height: 1.4;
         }
 
         .receipt-header {
             text-align: center;
             border-bottom: 1px dashed #000;
-            padding-bottom: 6px;
-            margin-bottom: 6px;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
         }
         .receipt-logo {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 900;
-            margin: 0 0 2px 0;
+            margin: 0 0 3px 0;
             text-transform: uppercase;
         }
-        .receipt-header p { margin: 1px 0; font-size: 9px; }
+        .receipt-header p { margin: 2px 0; font-size: 11px; }
 
         .receipt-info {
             border-bottom: 1px dashed #000;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
         }
-        .receipt-info p { margin: 1px 0; font-size: 9px; }
+        .receipt-info p { margin: 2px 0; font-size: 11px; }
 
         .receipt-items {
             border-bottom: 1px dashed #000;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
         }
         .receipt-item {
             display: flex;
             justify-content: space-between;
-            margin: 2px 0;
-            font-size: 10px;
+            margin: 3px 0;
+            font-size: 12px;
         }
         .receipt-item-name {
             flex: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 100px;
         }
-        .receipt-item-qty { width: 25px; text-align: center; }
+        .receipt-item-qty { width: 30px; text-align: center; flex-shrink: 0; }
         .receipt-item-price {
-            width: 60px;
+            width: 70px;
             text-align: right;
             white-space: nowrap;
-            font-size: 9px;
+            flex-shrink: 0;
+            font-size: 11px;
         }
 
         .receipt-totals { margin-bottom: 6px; }
         .receipt-total-line {
             display: flex;
             justify-content: space-between;
-            margin: 2px 0;
-            font-size: 10px;
+            margin: 3px 0;
+            font-size: 12px;
         }
         .receipt-total-line.grand-total {
             font-weight: bold;
-            font-size: 13px;
+            font-size: 15px;
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
-            padding: 4px 0;
-            margin-top: 3px;
+            padding: 5px 0;
+            margin-top: 4px;
         }
 
         .receipt-footer {
             text-align: center;
             border-top: 1px dashed #000;
-            padding-top: 6px;
-            margin-top: 6px;
+            padding-top: 8px;
+            margin-top: 8px;
         }
-        .receipt-footer p { margin: 1px 0; font-size: 9px; }
+        .receipt-footer p { margin: 2px 0; font-size: 11px; }
 
         .receipt-barcode {
             text-align: center;
-            margin: 4px 0;
-            font-size: 8px;
+            margin: 6px 0;
+            font-size: 10px;
             letter-spacing: 1px;
         }
         .receipt-staff-detail {
-            font-size: 8px;
+            font-size: 10px;
             color: #333;
-            margin-top: -1px;
-            padding-left: 4px;
+            margin-top: 0;
+            padding-left: 6px;
         }
         .receipt-cut-line {
             text-align: center;
-            margin: 6px 0 0 0;
-            font-size: 7px;
+            margin: 8px 0 0 0;
+            font-size: 9px;
             letter-spacing: 2px;
             color: #999;
         }
@@ -176,7 +175,7 @@
             $rate = \App\Models\ExchangeRate::getCurrentRate();
         @endphp
         @if($rate)
-            <div class="receipt-total-line" style="font-size: 9px; color: #555;">
+            <div class="receipt-total-line" style="font-size: 11px; color: #555;">
                 <span>USD:</span>
                 <span>$ {{ number_format($transaction->total / $rate->rate, 2, ',', '.') }}</span>
             </div>
@@ -188,9 +187,9 @@
     </div>
 
     <div class="receipt-footer">
-        <p style="font-size: 10px; font-weight: bold;">Merci de votre visite !</p>
+        <p style="font-size: 12px; font-weight: bold;">Merci de votre visite !</p>
         <p>A bientôt</p>
-        <p style="margin-top: 4px; font-size: 8px;">{{ $transaction->created_at->format('d/m/Y H:i:s') }}</p>
+        <p style="margin-top: 4px; font-size: 10px;">{{ $transaction->created_at->format('d/m/Y H:i:s') }}</p>
     </div>
 
     <div class="receipt-cut-line">

@@ -511,14 +511,15 @@
         inlineStyles.forEach(function(s) { s.remove(); });
         var content = clone.innerHTML;
 
-        // Styles optimisés pour impression POS 72mm ET PDF/imprimante classique
-        // On utilise width:100% pour remplir la largeur du papier (le pilote POS gère 72mm)
-        // Font sizes en pt pour un rendu fiable à l'impression
+        // Styles optimisés pour impression POS 72mm
+        // @page size:72mm force le navigateur à créer une page de 72mm (pas A4)
+        // Ainsi le contenu est rendu à taille réelle sur l'imprimante POS
+        // Sur imprimante 80mm, il y aura juste ~4mm de marge de chaque côté
         var printStyles =
             '*{margin:0;padding:0;box-sizing:border-box}' +
-            '@page{margin:0mm}' +
-            'html,body{width:100%;margin:0;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:10pt;line-height:1.4}' +
-            '.receipt-print{width:100%;margin:0;padding:3mm 2mm}' +
+            '@page{size:72mm auto;margin:0}' +
+            'html,body{width:72mm;margin:0;padding:0;background:#fff;color:#000;font-family:"Courier New",Courier,monospace;font-size:10pt;line-height:1.4}' +
+            '.receipt-print{width:100%;margin:0;padding:1mm 2mm}' +
             '.receipt-header{text-align:center;border-bottom:1px dashed #000;padding-bottom:4pt;margin-bottom:4pt}' +
             '.receipt-logo{font-size:14pt;font-weight:900;margin:0 0 2pt 0;text-transform:uppercase}' +
             '.receipt-header p{margin:1pt 0;font-size:8pt}' +
@@ -528,7 +529,7 @@
             '.receipt-item{display:flex;justify-content:space-between;margin:2pt 0;font-size:9pt}' +
             '.receipt-item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
             '.receipt-item-qty{width:20pt;text-align:center;flex-shrink:0}' +
-            '.receipt-item-price{width:55pt;text-align:right;white-space:nowrap;flex-shrink:0;font-size:8pt}' +
+            '.receipt-item-price{width:50pt;text-align:right;white-space:nowrap;flex-shrink:0;font-size:8pt}' +
             '.receipt-totals{margin-bottom:4pt}' +
             '.receipt-total-line{display:flex;justify-content:space-between;margin:2pt 0;font-size:9pt}' +
             '.receipt-total-line.grand-total{font-weight:bold;font-size:12pt;border-top:1px solid #000;border-bottom:1px solid #000;padding:3pt 0;margin-top:3pt}' +

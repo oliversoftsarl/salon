@@ -255,9 +255,11 @@
                 </tbody>
             </table>
         </div>
+        @if($debts->hasPages())
         <div class="card-footer">
             {{ $debts->links() }}
         </div>
+        @endif
     </div>
 
     {{-- Modal Formulaire Dette --}}

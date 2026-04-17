@@ -165,9 +165,11 @@
                 </tbody>
             </table>
         </div>
+        @if($items->hasPages())
         <div class="card-footer">
             {{ $items->links() }}
         </div>
+        @endif
     </div>
 
     {{-- Modal de confirmation de suppression (Admin uniquement) --}}

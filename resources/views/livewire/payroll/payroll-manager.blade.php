@@ -181,9 +181,11 @@
             </div>
 
             {{-- Pagination --}}
-            <div class="mt-3">
+            @if($payments->hasPages())
+            <div class="card-footer">
                 {{ $payments->links() }}
             </div>
+            @endif
         </div>
     </div>
 

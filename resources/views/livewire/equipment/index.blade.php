@@ -235,9 +235,11 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            @if($equipmentList->hasPages())
+            <div class="card-footer">
                 {{ $equipmentList->links() }}
             </div>
+            @endif
         </div>
     </div>
 

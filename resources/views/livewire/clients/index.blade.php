@@ -164,9 +164,11 @@
                     </table>
                 </div>
 
+                @if($clients->hasPages())
                 <div class="card-footer">
                     {{ $clients->links() }}
                 </div>
+                @endif
             </div>
         </div>
     </div>

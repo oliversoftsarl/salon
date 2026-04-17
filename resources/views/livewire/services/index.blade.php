@@ -128,9 +128,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($services->hasPages())
                 <div class="card-footer">
                     {{ $services->links() }}
                 </div>
+                @endif
             </div>
         </div>
     </div>

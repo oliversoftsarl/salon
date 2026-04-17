@@ -168,9 +168,11 @@
                         </table>
                     </div>
 
-                    <div>
+                    @if($consumptions->hasPages())
+                    <div class="card-footer">
                         {{ $consumptions->links() }}
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

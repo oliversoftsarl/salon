@@ -152,8 +152,10 @@
                 </tbody>
             </table>
         </div>
+        @if($users->hasPages())
         <div class="card-footer">
             {{ $users->links() }}
         </div>
+        @endif
     </div>
 </div>

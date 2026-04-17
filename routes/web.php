@@ -37,7 +37,7 @@ Route::middleware([
     // Redirection intelligente selon le rôle
     Route::get('/', function () {
         $user = auth()->user();
-        if ($user && $user->role === 'cashier') {
+        if ($user && ($user->role === 'cashier' || ($user->roleModel && $user->roleModel->name === 'cashier'))) {
             return redirect()->route('pos.checkout');
         }
         return redirect()->route('dashboard');

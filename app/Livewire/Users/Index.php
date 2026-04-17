@@ -57,7 +57,7 @@ class Index extends Component
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', $uniqueEmail],
-            'role' => ['required', Rule::in(['admin','staff','cashier','manager'])],
+            'role' => ['required', 'string', 'max:50'],
             'role_id' => ['nullable', 'exists:roles,id'],
             'active' => ['boolean'],
             'password' => [$this->editingId ? 'nullable' : 'required', 'string', 'min:8', 'same:password_confirmation'],
@@ -73,6 +73,7 @@ class Index extends Component
         'email.unique' => 'Cet email est déjà utilisé.',
         'role.required' => 'Le rôle est requis.',
         'role.in' => 'Rôle invalide.',
+        'role.exists' => 'Rôle invalide.',
         'password.required' => 'Le mot de passe est requis.',
         'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
         'password.same' => 'La confirmation ne correspond pas.',
@@ -80,6 +81,9 @@ class Index extends Component
 
     public function updated($property): void
     {
+        if ($property === 'role') {
+            return; // Skip real-time validation for role, validated on save
+        }
         $this->validateOnly($property, $this->rules(), $this->messages);
     }
 
@@ -88,6 +92,9 @@ class Index extends Component
         // Synchroniser role_id avec le rôle sélectionné
         $role = Role::where('name', $value)->first();
         $this->role_id = $role?->id;
+
+        // Clear any previous role error
+        $this->resetErrorBag('role');
     }
 
     public function getRolesProperty()
@@ -137,9 +144,13 @@ class Index extends Component
     {
         $data = $this->validate($this->rules(), $this->messages);
 
-        // Assigner le role_id basé sur le rôle sélectionné
+        // Vérifier que le rôle existe dans la table roles
         $roleModel = Role::where('name', $this->role)->first();
-        $data['role_id'] = $roleModel?->id;
+        if (!$roleModel) {
+            $this->addError('role', 'Rôle invalide.');
+            return;
+        }
+        $data['role_id'] = $roleModel->id;
 
         // Préservation du mot de passe si vide en édition
         if (!empty($data['password'])) {

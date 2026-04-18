@@ -19,10 +19,12 @@ class Checkout extends Component
 {
     public string $productSearch = '';
     public string $serviceSearch = '';
+    public string $clientSearch = '';
     // cart items peuvent porter stylist_id pour les services
     public array $cart = []; // [['type'=>'product|service','id'=>int,'name'=>string,'price'=>float,'qty'=>int,'stylist_id'=>?int]]
     public string $payment_method = 'cash';
     public ?int $client_id = null;
+    public string $selectedClientLabel = '';
 
     // Dernière transaction pour le reçu
     public ?int $lastTransactionId = null;
@@ -39,6 +41,23 @@ class Checkout extends Component
     public ?int $newClient_loyalty_point = 0;
     public bool $newClient_publish_consent = false;
 
+    public function selectClient(int $id): void
+    {
+        $client = Client::find($id);
+        if ($client) {
+            $this->client_id = $client->id;
+            $this->selectedClientLabel = $this->clientLabel($client);
+            $this->clientSearch = '';
+        }
+    }
+
+    public function clearClient(): void
+    {
+        $this->client_id = null;
+        $this->selectedClientLabel = '';
+        $this->clientSearch = '';
+    }
+
     public function render()
     {
         // Ne montrer que les produits qui peuvent être vendus (sale ou both)
@@ -52,8 +71,20 @@ class Checkout extends Component
             ->when($this->serviceSearch, fn ($q) => $q->where('name', 'like', "%{$this->serviceSearch}%"))
             ->where('active', true)->orderBy('name')->limit(10)->get();
 
+        $clientCols = \Schema::getColumnListing((new Client)->getTable());
+        $clientOrderCol = in_array('first_name', $clientCols) ? 'first_name' : (in_array('name', $clientCols) ? 'name' : 'id');
+
         $clients = Client::query()
-            ->orderByDesc('id')->limit(50)->get()
+            ->when($this->clientSearch, fn ($q) =>
+                $q->where(function($q2) use ($clientCols) {
+                    $search = '%' . $this->clientSearch . '%';
+                    foreach (['first_name','last_name','name','names','phone','phone_number','email'] as $col) {
+                        if (in_array($col, $clientCols)) {
+                            $q2->orWhere($col, 'like', $search);
+                        }
+                    }
+                }))
+            ->orderBy($clientOrderCol)->limit(20)->get()
             ->map(fn($c) => ['id' => $c->id, 'label' => $this->clientLabel($c)]);
 
         // Liste des prestataires (Coiffeurs et Barbiers uniquement)
@@ -195,6 +226,7 @@ class Checkout extends Component
             $client = Client::create($data);
 
             $this->client_id = $client->id;
+            $this->selectedClientLabel = $this->clientLabel($client);
             $this->showNewClient = false;
 
             // reset form
@@ -379,6 +411,8 @@ class Checkout extends Component
         $this->cart = [];
         $this->payment_method = 'cash';
         $this->client_id = null;
+        $this->selectedClientLabel = '';
+        $this->clientSearch = '';
 
         // Dispatcher un événement pour déclencher l'impression
         $this->dispatch('transaction-completed', transactionId: $transactionId);

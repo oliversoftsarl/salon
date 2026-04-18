@@ -315,21 +315,74 @@
                             {{-- Client --}}
                             <div class="mb-2">
                                 <label class="pos-section-title">Client</label>
-                                <div class="d-flex gap-1">
-                                    <select class="form-select pos-client-select flex-grow-1" wire:model="client_id">
-                                        <option value="">— Client de passage —</option>
-                                        @isset($clients)
-                                            @foreach($clients as $c)
-                                                <option value="{{ $c['id'] }}">{{ $c['label'] }}</option>
-                                            @endforeach
-                                        @endisset
-                                    </select>
-                                    <button type="button" class="btn btn-outline-primary px-2"
-                                            wire:click="$toggle('showNewClient')"
-                                            title="Nouveau client" style="min-width: 40px;">
-                                        <i class="ni ni-single-02"></i>
-                                    </button>
-                                </div>
+                                @if($client_id)
+                                    {{-- Client sélectionné --}}
+                                    <div class="d-flex align-items-center gap-1">
+                                        <div class="form-control pos-client-select d-flex align-items-center flex-grow-1 bg-light">
+                                            <i class="ni ni-single-02 text-success me-2"></i>
+                                            <span class="text-truncate">{{ $selectedClientLabel }}</span>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger px-2" wire:click="clearClient"
+                                                title="Retirer le client" style="min-width: 40px; height: 44px;">
+                                            <i class="ni ni-fat-remove"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary px-2"
+                                                wire:click="$toggle('showNewClient')"
+                                                title="Nouveau client" style="min-width: 40px; height: 44px;">
+                                            <i class="ni ni-fat-add"></i>
+                                        </button>
+                                    </div>
+                                @else
+                                    {{-- Recherche client --}}
+                                    <div class="d-flex gap-1">
+                                        <div class="position-relative flex-grow-1" x-data="{ open: false }" @click.outside="open = false">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0 px-2"><i class="ni ni-zoom-split-in"></i></span>
+                                                <input type="text" class="form-control pos-client-select border-start-0"
+                                                       placeholder="Rechercher un client..."
+                                                       wire:model.live.debounce.300ms="clientSearch"
+                                                       @focus="open = true"
+                                                       @input="open = true"
+                                                       autocomplete="off">
+                                            </div>
+                                            {{-- Dropdown résultats --}}
+                                            @if($clients && count($clients) > 0)
+                                                <div x-show="open || $wire.clientSearch.length > 0"
+                                                     x-transition
+                                                     class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1"
+                                                     style="z-index: 1050; max-height: 200px; overflow-y: auto;">
+                                                    <div class="p-1 border-bottom bg-light" style="font-size: 10px; color: #6c757d;">
+                                                        {{ count($clients) }} client(s) trouvé(s)
+                                                    </div>
+                                                    @foreach($clients as $c)
+                                                        <button type="button"
+                                                                class="btn btn-sm w-100 text-start px-3 py-2 border-0 rounded-0"
+                                                                style="font-size: 13px;"
+                                                                wire:click="selectClient({{ $c['id'] }})"
+                                                                @click="open = false"
+                                                                onmouseover="this.style.background='#f0f4ff'"
+                                                                onmouseout="this.style.background='transparent'">
+                                                            <i class="ni ni-single-02 text-primary me-1"></i>
+                                                            {{ $c['label'] }}
+                                                        </button>
+                                                    @endforeach
+                                                </div>
+                                            @elseif($clientSearch)
+                                                <div x-show="open"
+                                                     class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1 p-3 text-center"
+                                                     style="z-index: 1050;">
+                                                    <p class="text-muted mb-0" style="font-size: 12px;">Aucun client trouvé</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary px-2"
+                                                wire:click="$toggle('showNewClient')"
+                                                title="Nouveau client" style="min-width: 40px; height: 44px;">
+                                            <i class="ni ni-fat-add"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 10px;">Tapez pour rechercher ou laissez vide pour client de passage</small>
+                                @endif
                             </div>
 
                             {{-- Moyen de paiement --}}

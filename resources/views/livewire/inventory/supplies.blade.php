@@ -78,6 +78,14 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white border-end-0 px-2"><i class="ni ni-zoom-split-in"></i></span>
+                        <input type="text"
+                               class="form-control border-start-0"
+                               placeholder="Rechercher produit, fournisseur ou note..."
+                               wire:model.live.debounce.300ms="filter_search">
+                    </div>
+
                     <div class="row g-2 mb-3">
                         <div class="col-md-3">
                             <label class="form-label">Du</label>

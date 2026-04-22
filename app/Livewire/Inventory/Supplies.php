@@ -27,6 +27,7 @@ class Supplies extends Component
     public ?string $date_to = null;
     public ?int $filter_product_id = null;
     public ?string $filter_supplier = null;
+    public ?string $filter_search = null;
 
     protected function rules(): array
     {
@@ -49,7 +50,7 @@ class Supplies extends Component
 
     public function updating($name, $value): void
     {
-        if (in_array($name, ['date_from','date_to','filter_product_id','filter_supplier'], true)) {
+        if (in_array($name, ['date_from','date_to','filter_product_id','filter_supplier','filter_search'], true)) {
             $this->resetPage();
         }
     }
@@ -272,6 +273,14 @@ class Supplies extends Component
             ->when($this->date_to, fn($qr) => $qr->whereDate('received_at', '<=', Carbon::parse($this->date_to)))
             ->when($this->filter_product_id, fn($qr) => $qr->where('product_id', $this->filter_product_id))
             ->when($this->filter_supplier, fn($qr) => $qr->where('supplier', 'like', '%'.$this->filter_supplier.'%'))
+            ->when($this->filter_search, function ($qr) {
+                $term = trim((string) $this->filter_search);
+                $qr->where(function ($inner) use ($term) {
+                    $inner->whereHas('product', fn($p) => $p->where('name', 'like', '%'.$term.'%'))
+                        ->orWhere('supplier', 'like', '%'.$term.'%')
+                        ->orWhere('notes', 'like', '%'.$term.'%');
+                });
+            })
             ->orderByDesc('received_at')
             ->orderByDesc('id');
 

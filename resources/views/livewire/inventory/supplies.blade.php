@@ -16,13 +16,65 @@
                 <div class="card-body">
                     <div class="mb-2">
                         <label class="form-label">Produit</label>
-                        <select class="form-select" wire:model="product_id">
-                            <option value="">— Sélectionner —</option>
-                            @foreach($products as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="position-relative" x-data="{ open: false }" @click.outside="open = false">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 px-2"><i class="ni ni-zoom-split-in"></i></span>
+                                <input type="text"
+                                       class="form-control border-start-0"
+                                       placeholder="Rechercher un produit..."
+                                       wire:model.live.debounce.300ms="product_search"
+                                       @focus="open = true"
+                                       @input="open = true"
+                                       autocomplete="off">
+                            </div>
+                            {{-- Dropdown résultats produits --}}
+                            @if($formProductsFormatted && count($formProductsFormatted) > 0)
+                                <div x-show="open || $wire.product_search.length > 0"
+                                     x-transition
+                                     class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1"
+                                     style="z-index: 1050; max-height: 220px; overflow-y: auto;">
+                                    <div class="p-2 border-bottom bg-light" style="font-size: 11px; color: #6c757d; font-weight: 600;">
+                                        {{ count($formProductsFormatted) }} produit(s) trouvé(s)
+                                    </div>
+                                    @foreach($formProductsFormatted as $p)
+                                        <button type="button"
+                                                class="btn btn-sm w-100 text-start px-3 py-2 border-0 rounded-0"
+                                                style="font-size: 13px;"
+                                                wire:click="$set('product_id', {{ $p['id'] }}); $set('product_search', '')"
+                                                @click="open = false"
+                                                onmouseover="this.style.background='#f8f9fa'"
+                                                onmouseout="this.style.background='transparent'">
+                                            <i class="ni ni-box-2 text-primary me-2"></i>{{ $p['label'] }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @elseif($product_search)
+                                <div x-show="open"
+                                     class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1 p-3 text-center"
+                                     style="z-index: 1050;">
+                                    <p class="text-muted mb-0" style="font-size: 12px;">Aucun produit trouvé</p>
+                                </div>
+                            @endif
+                        </div>
                         @error('product_id') <small class="text-danger">{{ $message }}</small> @enderror
+
+                        {{-- Affichage du produit sélectionné --}}
+                        @if($product_id)
+                            @php
+                                $selectedProduct = $products->firstWhere('id', $product_id);
+                            @endphp
+                            @if($selectedProduct)
+                                <div class="mt-2 p-2 bg-light rounded d-flex align-items-center justify-content-between">
+                                    <span style="font-size: 13px;">
+                                        <i class="ni ni-check-bold text-success me-1"></i>
+                                        <strong>{{ $selectedProduct->name }}</strong>
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger px-2 py-0" wire:click="$set('product_id', null)" title="Retirer">
+                                        <i class="ni ni-fat-remove"></i>
+                                    </button>
+                                </div>
+                            @endif
+                        @endif
                     </div>
 
                     <div class="row g-2">

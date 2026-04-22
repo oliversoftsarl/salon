@@ -16,6 +16,7 @@ class Supplies extends Component
 
     // Form
     public ?int $product_id = null;
+    public ?string $product_search = null;
     public int $quantity_received = 1;
     public ?string $received_at = null;
     public ?string $supplier = null;
@@ -267,6 +268,17 @@ class Supplies extends Component
     {
         $products = Product::orderBy('name')->get(['id','name','stock_quantity','low_stock_threshold']);
 
+        // Produits pour le formulaire (liste filtrée par recherche)
+        $formProducts = Product::when($this->product_search, fn($q) => $q->where('name', 'like', '%'.trim((string) $this->product_search).'%'))
+            ->orderBy('name')
+            ->get(['id','name','stock_quantity','low_stock_threshold']);
+
+        // Formater les produits pour le dropdown (comme dans POS checkout)
+        $formProductsFormatted = $formProducts->map(fn($p) => [
+            'id' => $p->id,
+            'label' => $p->name,
+        ])->toArray();
+
         $q = ProductSupply::query()
             ->with(['product:id,name,stock_quantity,low_stock_threshold'])
             ->when($this->date_from, fn($qr) => $qr->whereDate('received_at', '>=', Carbon::parse($this->date_from)))
@@ -289,7 +301,7 @@ class Supplies extends Component
         // Somme de la page
         $pageTotalQty = $supplies->getCollection()->sum('quantity_received');
 
-        return view('livewire.inventory.supplies', compact('products','supplies','pageTotalQty'))
+        return view('livewire.inventory.supplies', compact('products','formProductsFormatted','supplies','pageTotalQty'))
             ->layout('layouts.main', ['title' => 'Approvisionnements']);
     }
 }

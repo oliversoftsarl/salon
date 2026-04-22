@@ -301,7 +301,13 @@ class Consumptions extends Component
 
         $consumptions = $q->paginate(12);
 
-        return view('livewire.inventory.consumptions', compact('products','formProducts','staff','consumptions'))
+        // Formater les produits pour le dropdown (comme dans POS checkout)
+        $formProductsFormatted = $formProducts->map(fn($p) => [
+            'id' => $p->id,
+            'label' => $p->name . ($p->is_consumable ? ' (consommable)' : ''),
+        ])->toArray();
+
+        return view('livewire.inventory.consumptions', compact('products','formProductsFormatted','staff','consumptions'))
             ->layout('layouts.main', ['title' => 'Consommations']);
     }
 }

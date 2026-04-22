@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\StockMovement;
+
 
 class Debts extends Component
 {
@@ -152,13 +154,51 @@ class Debts extends Component
         ];
 
         if ($this->editingDebtId) {
+            // Modification d'une dette existante
             $debt = StaffDebt::findOrFail($this->editingDebtId);
-            $debt->update($data);
+
+            DB::transaction(function () use ($debt, $data) {
+                // Si c'était une consommation produit, restaurer l'ancien stock
+                if ($debt->type === 'product_consumption' && $debt->product_id && $debt->quantity) {
+                    Product::where('id', $debt->product_id)->increment('stock_quantity', $debt->quantity);
+                    StockMovement::where('reference_id', $debt->id)
+                        ->where('reason', 'Staff Debt Consumption')
+                        ->delete();
+                }
+
+                // Mettre à jour la dette
+                $debt->update($data);
+
+                // Si la nouvelle dette est une consommation produit, déduire le nouveau stock
+                if ($this->type === 'product_consumption' && $this->product_id && $this->quantity) {
+                    Product::where('id', $this->product_id)->decrement('stock_quantity', $this->quantity);
+                    StockMovement::create([
+                        'product_id' => $this->product_id,
+                        'qty_change' => -$this->quantity,
+                        'reason' => 'Staff Debt Consumption',
+                        'reference_id' => $debt->id,
+                    ]);
+                }
+            });
             session()->flash('success', 'Dette modifiée avec succès.');
         } else {
-            $data['created_by'] = auth()->id();
-            $data['status'] = 'pending';
-            StaffDebt::create($data);
+            // Création d'une nouvelle dette
+            DB::transaction(function () use ($data) {
+                $data['created_by'] = auth()->id();
+                $data['status'] = 'pending';
+                $debt = StaffDebt::create($data);
+
+                // Si c'est une consommation produit, déduire le stock
+                if ($this->type === 'product_consumption' && $this->product_id && $this->quantity) {
+                    Product::where('id', $this->product_id)->decrement('stock_quantity', $this->quantity);
+                    StockMovement::create([
+                        'product_id' => $this->product_id,
+                        'qty_change' => -$this->quantity,
+                        'reason' => 'Staff Debt Consumption',
+                        'reference_id' => $debt->id,
+                    ]);
+                }
+            });
             session()->flash('success', 'Dette enregistrée avec succès.');
         }
 
@@ -277,7 +317,21 @@ class Debts extends Component
             return;
         }
 
-        $debt->delete();
+        // Si c'est une consommation produit, restaurer le stock
+        if ($debt->type === 'product_consumption' && $debt->product_id && $debt->quantity) {
+            DB::transaction(function () use ($debt) {
+                Product::where('id', $debt->product_id)->increment('stock_quantity', $debt->quantity);
+                // Supprimer le mouvement de stock
+                StockMovement::where('reference_id', $debt->id)
+                    ->where('reason', 'Staff Debt Consumption')
+                    ->delete();
+                // Supprimer la dette
+                $debt->delete();
+            });
+        } else {
+            $debt->delete();
+        }
+
         session()->flash('success', 'Dette supprimée.');
     }
 

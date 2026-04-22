@@ -17,6 +17,7 @@ class Consumptions extends Component
 
     // Form
     public ?int $product_id = null;
+    public ?string $product_search = null;
     public int $quantity_used = 1;
     public ?int $staff_id = null;
     public ?string $used_at = null;
@@ -269,8 +270,14 @@ class Consumptions extends Component
 
     public function render()
     {
-        // Ne montrer que les produits qui peuvent être consommés (consumption ou both)
+        // Produits pour les filtres (liste complète)
         $products = Product::whereIn('category', ['consumption', 'both'])
+            ->orderBy('name')
+            ->get(['id','name','is_consumable','low_stock_threshold','stock_quantity','category']);
+
+        // Produits pour le formulaire (liste filtrée par recherche)
+        $formProducts = Product::whereIn('category', ['consumption', 'both'])
+            ->when($this->product_search, fn($q) => $q->where('name', 'like', '%'.trim((string) $this->product_search).'%'))
             ->orderBy('name')
             ->get(['id','name','is_consumable','low_stock_threshold','stock_quantity','category']);
         $staff = User::orderBy('name')->get(['id','name']);
@@ -294,7 +301,7 @@ class Consumptions extends Component
 
         $consumptions = $q->paginate(12);
 
-        return view('livewire.inventory.consumptions', compact('products','staff','consumptions'))
+        return view('livewire.inventory.consumptions', compact('products','formProducts','staff','consumptions'))
             ->layout('layouts.main', ['title' => 'Consommations']);
     }
 }

@@ -15,10 +15,21 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-2">
+                        <label class="form-label">Recherche produit</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 px-2"><i class="ni ni-zoom-split-in"></i></span>
+                            <input type="text"
+                                   class="form-control border-start-0"
+                                   placeholder="Rechercher un produit..."
+                                   wire:model.live.debounce.300ms="product_search">
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
                         <label class="form-label">Produit</label>
                         <select class="form-select" wire:model="product_id">
                             <option value="">— Sélectionner —</option>
-                            @foreach($products as $p)
+                            @foreach($formProducts as $p)
                                 <option value="{{ $p->id }}">
                                     {{ $p->name }} @if($p->is_consumable) (consommable) @endif
                                 </option>

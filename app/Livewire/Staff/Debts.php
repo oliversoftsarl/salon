@@ -37,6 +37,7 @@ class Debts extends Component
     public string $debt_date = '';
     public ?string $due_date = null;
     public string $notes = '';
+    public ?string $product_search = null;
 
     // Formulaire paiement
     public bool $showPaymentForm = false;
@@ -352,6 +353,22 @@ class Debts extends Component
     public function getProductsProperty()
     {
         return Product::orderBy('name')->get();
+    }
+
+    public function getFormProductsProperty()
+    {
+        $query = Product::query();
+
+        if ($this->product_search) {
+            $query->where('name', 'like', "%{$this->product_search}%");
+        }
+
+        return $query->orderBy('name')->get()->map(fn($p) => [
+            'id' => $p->id,
+            'label' => $p->name . ' (' . number_format($p->price, 0, ',', ' ') . ' FC)',
+            'name' => $p->name,
+            'price' => $p->price,
+        ]);
     }
 
     public function getStatsProperty(): array

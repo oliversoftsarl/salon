@@ -301,10 +301,19 @@
                                     <label class="form-label">Produit consommé</label>
                                     @if($product_id)
                                         {{-- Produit sélectionné --}}
+                                        @php
+                                            $selectedProduct = $this->formProducts->firstWhere('id', $product_id);
+                                        @endphp
                                         <div class="d-flex gap-1">
                                             <div class="form-control form-select d-flex align-items-center flex-grow-1 bg-light">
                                                 <i class="ni ni-box-2 text-info me-2"></i>
-                                                <span class="text-truncate">{{ collect($this->formProducts)->firstWhere('id', $product_id)?->label ?? 'Produit' }}</span>
+                                                <span class="text-truncate">
+                                                    @if($selectedProduct)
+                                                        {{ $selectedProduct->name }} ({{ number_format($selectedProduct->price, 0, ',', ' ') }} FC)
+                                                    @else
+                                                        Produit
+                                                    @endif
+                                                </span>
                                             </div>
                                             <button type="button" class="btn btn-outline-danger px-2 py-1" wire:click="$set('product_id', null)"
                                                     title="Retirer le produit" style="min-width: 40px;">
@@ -324,24 +333,24 @@
                                                        autocomplete="off">
                                             </div>
                                             {{-- Dropdown résultats --}}
-                                            @if($formProducts && count($formProducts) > 0)
+                                            @if($this->formProducts && count($this->formProducts) > 0)
                                                 <div x-show="open || $wire.product_search.length > 0"
                                                      x-transition
                                                      class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1"
                                                      style="z-index: 1050; max-height: 200px; overflow-y: auto;">
                                                     <div class="p-2 border-bottom bg-light" style="font-size: 11px; color: #6c757d;">
-                                                        {{ count($formProducts) }} produit(s) trouvé(s)
+                                                        {{ count($this->formProducts) }} produit(s) trouvé(s)
                                                     </div>
-                                                    @foreach($formProducts as $p)
+                                                    @foreach($this->formProducts as $p)
                                                         <button type="button"
                                                                 class="btn btn-sm w-100 text-start px-3 py-2 border-0 rounded-0"
                                                                 style="font-size: 12px;"
-                                                                wire:click="$set('product_id', {{ $p['id'] }})"
+                                                                wire:click="$set('product_id', {{ $p->id }})"
                                                                 @click="open = false"
                                                                 onmouseover="this.style.background='#f0f4ff'"
                                                                 onmouseout="this.style.background='transparent'">
                                                             <i class="ni ni-box-2 text-info me-1"></i>
-                                                            {{ $p['label'] }}
+                                                            {{ $p->name }} ({{ number_format($p->price, 0, ',', ' ') }} FC)
                                                         </button>
                                                     @endforeach
                                                 </div>

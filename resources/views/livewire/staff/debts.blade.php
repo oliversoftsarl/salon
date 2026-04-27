@@ -299,13 +299,63 @@
                             @if($type === 'product_consumption')
                                 <div class="col-md-6">
                                     <label class="form-label">Produit consommé</label>
-                                    <select class="form-select" wire:model.live="product_id">
-                                        <option value="">— Sélectionner —</option>
-                                        @foreach($this->products as $product)
-                                            <option value="{{ $product->id }}">{{ $product->name }} ({{ number_format($product->price, 0, ',', ' ') }} FC)</option>
-                                        @endforeach
-                                    </select>
-                                    @error('product_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    @if($product_id)
+                                        {{-- Produit sélectionné --}}
+                                        <div class="d-flex gap-1">
+                                            <div class="form-control form-select d-flex align-items-center flex-grow-1 bg-light">
+                                                <i class="ni ni-box-2 text-info me-2"></i>
+                                                <span class="text-truncate">{{ collect($this->formProducts)->firstWhere('id', $product_id)?->label ?? 'Produit' }}</span>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-danger px-2 py-1" wire:click="$set('product_id', null)"
+                                                    title="Retirer le produit" style="min-width: 40px;">
+                                                <i class="ni ni-fat-remove"></i>
+                                            </button>
+                                        </div>
+                                    @else
+                                        {{-- Recherche produit --}}
+                                        <div x-data="{ open: false }" @click.outside="open = false" class="position-relative">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0 px-2"><i class="ni ni-zoom-split-in"></i></span>
+                                                <input type="text" class="form-control border-start-0"
+                                                       placeholder="Rechercher un produit..."
+                                                       wire:model.live.debounce.300ms="product_search"
+                                                       @focus="open = true"
+                                                       @input="open = true"
+                                                       autocomplete="off">
+                                            </div>
+                                            {{-- Dropdown résultats --}}
+                                            @if($formProducts && count($formProducts) > 0)
+                                                <div x-show="open || $wire.product_search.length > 0"
+                                                     x-transition
+                                                     class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1"
+                                                     style="z-index: 1050; max-height: 200px; overflow-y: auto;">
+                                                    <div class="p-2 border-bottom bg-light" style="font-size: 11px; color: #6c757d;">
+                                                        {{ count($formProducts) }} produit(s) trouvé(s)
+                                                    </div>
+                                                    @foreach($formProducts as $p)
+                                                        <button type="button"
+                                                                class="btn btn-sm w-100 text-start px-3 py-2 border-0 rounded-0"
+                                                                style="font-size: 12px;"
+                                                                wire:click="$set('product_id', {{ $p['id'] }})"
+                                                                @click="open = false"
+                                                                onmouseover="this.style.background='#f0f4ff'"
+                                                                onmouseout="this.style.background='transparent'">
+                                                            <i class="ni ni-box-2 text-info me-1"></i>
+                                                            {{ $p['label'] }}
+                                                        </button>
+                                                    @endforeach
+                                                </div>
+                                            @elseif($product_search)
+                                                <div x-show="open"
+                                                     class="position-absolute w-100 bg-white border rounded-2 shadow-lg mt-1 p-3 text-center"
+                                                     style="z-index: 1050;">
+                                                    <p class="text-muted mb-0" style="font-size: 12px;">Aucun produit trouvé</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <small class="text-muted" style="font-size: 11px;">Tapez pour rechercher</small>
+                                    @endif
+                                    @error('product_id') <small class="text-danger d-block">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Quantité</label>

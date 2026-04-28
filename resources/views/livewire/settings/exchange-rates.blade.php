@@ -172,7 +172,7 @@
         </div>
         @if($rates->hasPages())
             <div class="card-footer">
-                {{ $rates->links() }}
+                {{ $rates->links('pagination::livewire-bootstrap-5') }}
             </div>
         @endif
     </div>

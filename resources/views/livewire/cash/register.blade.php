@@ -310,7 +310,7 @@
         </div>
         @if($movements->hasPages())
             <div class="card-footer">
-                {{ $movements->links() }}
+                {{ $movements->links('pagination::livewire-bootstrap-5') }}
             </div>
         @endif
     </div>

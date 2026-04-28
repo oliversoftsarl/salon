@@ -228,7 +228,7 @@
 
                     @if($consumptions->hasPages())
                     <div class="card-footer">
-                        {{ $consumptions->links() }}
+                        {{ $consumptions->links('pagination::livewire-bootstrap-5') }}
                     </div>
                     @endif
                 </div>

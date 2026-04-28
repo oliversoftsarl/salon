@@ -36,7 +36,6 @@ class TransactionsList extends Component
         'date_to'     => ['except' => null],
         'search'      => ['except' => ''],
         'stylist_id'  => ['except' => null],
-        'page'        => ['except' => 1],
     ];
 
     public function mount(): void

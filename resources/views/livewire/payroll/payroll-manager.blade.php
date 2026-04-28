@@ -183,7 +183,7 @@
             {{-- Pagination --}}
             @if($payments->hasPages())
             <div class="card-footer">
-                {{ $payments->links() }}
+                {{ $payments->links('pagination::livewire-bootstrap-5') }}
             </div>
             @endif
         </div>

@@ -554,7 +554,7 @@
                 </div>
                 @if($recentPrestations->hasPages())
                     <div class="card-footer">
-                        {{ $recentPrestations->links() }}
+                        {{ $recentPrestations->links('pagination::livewire-bootstrap-5') }}
                     </div>
                 @endif
             </div>

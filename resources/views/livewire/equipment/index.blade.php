@@ -237,7 +237,7 @@
 
             @if($equipmentList->hasPages())
             <div class="card-footer">
-                {{ $equipmentList->links() }}
+                {{ $equipmentList->links('pagination::livewire-bootstrap-5') }}
             </div>
             @endif
         </div>

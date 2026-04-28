@@ -37,6 +37,7 @@ class Debts extends Component
     public string $debt_date = '';
     public ?string $due_date = null;
     public string $notes = '';
+    public string $product_search = '';
 
     // Formulaire paiement
     public bool $showPaymentForm = false;

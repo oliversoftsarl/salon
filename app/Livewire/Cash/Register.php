@@ -57,6 +57,7 @@ class Register extends Component
         $this->date_from = now()->toDateString();
         $this->date_to = now()->toDateString();
         $this->form_date = now()->toDateString();
+        $this->form_category = $this->getDefaultExitCategory();
     }
 
     public function updatedPeriod($value): void
@@ -107,9 +108,9 @@ class Register extends Component
     {
         // Réinitialiser la catégorie selon le type
         if ($value === 'entry') {
-            $this->form_category = 'sale';
+            $this->form_category = $this->getDefaultEntryCategory();
         } else {
-            $this->form_category = 'expense';
+            $this->form_category = $this->getDefaultExitCategory();
         }
     }
 
@@ -185,19 +186,21 @@ class Register extends Component
     public function getFilteredCategoriesProperty(): array
     {
         if ($this->filter_type === 'entry') {
-            return CashMovement::$entryCategories;
+            return CashMovement::getEntryCategories();
         } elseif ($this->filter_type === 'exit') {
-            return CashMovement::$exitCategories;
+            return CashMovement::getExitCategories();
         }
         // Si "all", retourner toutes les catégories
-        return array_merge(CashMovement::$entryCategories, CashMovement::$exitCategories);
+        return array_merge(CashMovement::getEntryCategories(), CashMovement::getExitCategories());
     }
 
     public function openForm(string $type = 'exit'): void
     {
         $this->resetForm();
         $this->form_type = $type;
-        $this->form_category = $type === 'entry' ? 'other_income' : 'expense';
+        $this->form_category = $type === 'entry'
+            ? $this->getDefaultEntryCategory()
+            : $this->getDefaultExitCategory();
         $this->showForm = true;
     }
 
@@ -276,7 +279,7 @@ class Register extends Component
     {
         $this->editingId = null;
         $this->form_type = 'exit';
-        $this->form_category = 'expense';
+        $this->form_category = $this->getDefaultExitCategory();
         $this->form_date = now()->toDateString();
         $this->form_amount = 0;
         $this->form_description = '';
@@ -306,16 +309,26 @@ class Register extends Component
         );
     }
 
+    protected function getDefaultEntryCategory(): string
+    {
+        return CashMovement::getEntryCategories()[0] ?? 'sale';
+    }
+
+    protected function getDefaultExitCategory(): string
+    {
+        return CashMovement::getExitCategories()[0] ?? 'expense';
+    }
+
     public function render()
     {
         return view('livewire.cash.register', [
             'movements' => $this->movements,
             'stats' => $this->stats,
             'staffList' => $this->staffList,
-            'categoryLabels' => CashMovement::$categoryLabels,
+            'categoryLabels' => CashMovement::getCategoryLabels(),
             'paymentMethodLabels' => CashMovement::$paymentMethodLabels,
-            'entryCategories' => CashMovement::$entryCategories,
-            'exitCategories' => CashMovement::$exitCategories,
+            'entryCategories' => CashMovement::getEntryCategories(),
+            'exitCategories' => CashMovement::getExitCategories(),
             'filteredCategories' => $this->filteredCategories,
         ])->layout('layouts.main', ['title' => 'Gestion de Caisse']);
     }

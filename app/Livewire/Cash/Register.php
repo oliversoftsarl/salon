@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Cash;
 
+use App\Exports\CashMovementsExport;
 use App\Models\CashMovement;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
@@ -150,20 +153,25 @@ class Register extends Component
 
     public function getMovementsProperty()
     {
-        return CashMovement::query()
+        return $this->buildMovementsQuery()
             ->with(['user', 'createdBy', 'transaction'])
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->paginate(15);
+    }
+
+    protected function buildMovementsQuery(): Builder
+    {
+        return CashMovement::query()
             ->whereBetween('date', [$this->date_from, $this->date_to])
             ->when($this->filter_type !== 'all', fn($q) => $q->where('type', $this->filter_type))
             ->when($this->filter_category, fn($q) => $q->where('category', $this->filter_category))
             ->when($this->search, function ($q) {
                 $q->where(function ($qq) {
                     $qq->where('description', 'like', "%{$this->search}%")
-                       ->orWhere('reference', 'like', "%{$this->search}%");
+                        ->orWhere('reference', 'like', "%{$this->search}%");
                 });
-            })
-            ->orderByDesc('date')
-            ->orderByDesc('created_at')
-            ->paginate(15);
+            });
     }
 
     public function getStaffListProperty()
@@ -282,6 +290,20 @@ class Register extends Component
     {
         $this->showForm = false;
         $this->resetForm();
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(
+            new CashMovementsExport(
+                $this->date_from,
+                $this->date_to,
+                $this->filter_type,
+                $this->filter_category,
+                $this->search
+            ),
+            'mouvements_caisse_' . now()->format('Y-m-d_His') . '.xlsx'
+        );
     }
 
     public function render()

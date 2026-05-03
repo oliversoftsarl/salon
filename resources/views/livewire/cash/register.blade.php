@@ -21,6 +21,9 @@
                     <p class="text-sm text-secondary mb-0">Entrées, sorties et solde de caisse</p>
                 </div>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" wire:click="exportExcel">
+                        <i class="ni ni-cloud-download-95 me-1"></i> Export Excel
+                    </button>
                     <button class="btn btn-success" wire:click="openForm('entry')">
                         <i class="ni ni-fat-add me-1"></i> Entrée
                     </button>

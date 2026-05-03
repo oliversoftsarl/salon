@@ -21,6 +21,9 @@
                     <p class="text-sm text-secondary mb-0">Entrées, sorties et solde de caisse</p>
                 </div>
                 <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary" href="{{ route('settings.expense-categories') }}">
+                        <i class="ni ni-settings me-1"></i> Catégories dépenses
+                    </a>
                     <button class="btn btn-outline-primary" wire:click="exportExcel">
                         <i class="ni ni-cloud-download-95 me-1"></i> Export Excel
                     </button>
@@ -99,6 +102,7 @@
                     <input type="text" class="form-control" placeholder="Description..." wire:model.live.debounce.300ms="search">
                 </div>
             </div>
+
         </div>
     </div>
 

@@ -48,6 +48,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ['name' => 'roles', 'display_name' => 'Rôles & Permissions', 'group' => 'settings', 'route_name' => 'settings.roles', 'icon' => 'ni ni-key-25', 'order' => 61],
             ['name' => 'settings.exchange-rates', 'display_name' => 'Taux de Change', 'group' => 'settings', 'route_name' => 'settings.exchange-rates', 'icon' => 'ni ni-curved-next', 'order' => 62],
             ['name' => 'settings.revenue', 'display_name' => 'Paramètres Recette', 'group' => 'settings', 'route_name' => 'settings.revenue', 'icon' => 'ni ni-settings-gear-65', 'order' => 63],
+            ['name' => 'settings.expense-categories', 'display_name' => 'Catégories Dépenses', 'group' => 'settings', 'route_name' => 'settings.expense-categories', 'icon' => 'ni ni-collection', 'order' => 64],
         ];
 
         foreach ($permissions as $perm) {

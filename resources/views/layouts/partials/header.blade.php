@@ -222,7 +222,7 @@
       @endif
 
       {{-- Section Paramètres --}}
-      @if($isAdmin || $user?->hasPermission('users') || $user?->hasPermission('roles') || $user?->hasPermission('settings.exchange-rates') || $user?->hasPermission('settings.revenue'))
+      @if($isAdmin || $user?->hasPermission('users') || $user?->hasPermission('roles') || $user?->hasPermission('settings.exchange-rates') || $user?->hasPermission('settings.revenue') || $user?->hasPermission('settings.expense-categories'))
       <li class="nav-item mt-3">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Paramètres</h6>
       </li>
@@ -267,6 +267,17 @@
             <i class="ni ni-chart-bar-32 text-warning text-sm opacity-10"></i>
           </div>
           <span class="nav-link-text ms-1">Recettes Hebdo</span>
+        </a>
+      </li>
+      @endif
+
+      @if($isAdmin || $user?->hasPermission('settings.expense-categories'))
+      <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('settings.expense-categories') ? 'active' : '' }}" href="{{ route('settings.expense-categories') }}">
+          <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="ni ni-collection text-info text-sm opacity-10"></i>
+          </div>
+          <span class="nav-link-text ms-1">Catégories Dépenses</span>
         </a>
       </li>
       @endif
